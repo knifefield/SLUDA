@@ -1,0 +1,9 @@
+numpy
+torch==1.1.0
+torchvision==0.2.2
+six
+h5py
+Pillow
+scipy
+scikit-learn
+metric-learn
