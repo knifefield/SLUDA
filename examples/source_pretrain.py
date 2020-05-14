@@ -112,7 +112,7 @@ def main_worker(args):
     print(model)
     print("Model size: {:.3f} M".format(count_num_param(model)))
     model.cuda()
-    model = nn.DataParallel(model) // 多gpu并行
+    model = nn.DataParallel(model) # 多gpu并行
 
     # Load from checkpoint
     if args.resume:
