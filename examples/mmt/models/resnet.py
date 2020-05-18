@@ -141,6 +141,10 @@ def resnet50(**kwargs):
     return ResNet(50, **kwargs)
 
 
+def selfattention(**kwargs):
+    return SelfAttention(10, **kwargs)
+
+
 def resnet101(**kwargs):
     return ResNet(101, **kwargs)
 

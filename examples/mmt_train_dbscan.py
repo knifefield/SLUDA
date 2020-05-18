@@ -273,7 +273,7 @@ if __name__ == '__main__':
     parser.add_argument('-dt', '--dataset-target', type=str, default='market1501',
                         choices=datasets.names())
     parser.add_argument('-b', '--batch-size', type=int, default=64)
-    parser.add_argument('-j', '--workers', type=int, default=4)
+    parser.add_argument('-j', '--workers', type=int, default=0)
     parser.add_argument('--height', type=int, default=256,
                         help="input height")
     parser.add_argument('--width', type=int, default=128,
