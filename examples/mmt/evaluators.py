@@ -12,6 +12,8 @@ from .utils.rerank import re_ranking
 
 def extract_features(model, data_loader, print_freq=10, metric=None):
     model.eval()
+    # model.eval()，pytorch会自动把BN和DropOut固定住，而用训练好的值。不然的话，一旦test的batch_size过小，
+    # 很容易就会被BN层导致所生成图片颜色失真极大
     batch_time = AverageMeter()
     data_time = AverageMeter()
 
@@ -20,6 +22,7 @@ def extract_features(model, data_loader, print_freq=10, metric=None):
 
     end = time.time()
     with torch.no_grad():
+        # 在测试时不进行梯度的计算，这样可以在测试时有效减小显存的占用，以免发生显存溢出（OOM）。这条语句通常加在网络预测的那条代码上
         for i, (imgs, fnames, pids, _) in enumerate(data_loader):
             data_time.update(time.time() - end)
 
@@ -41,6 +44,7 @@ def extract_features(model, data_loader, print_freq=10, metric=None):
 
     return features, labels
 
+
 def pairwise_distance(features, query=None, gallery=None, metric=None):
     if query is None and gallery is None:
         n = len(features)
@@ -61,9 +65,10 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
         x = metric.transform(x)
         y = metric.transform(y)
     dist_m = torch.pow(x, 2).sum(dim=1, keepdim=True).expand(m, n) + \
-           torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+             torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
     dist_m.addmm_(1, -2, x, y.t())
     return dist_m, x.numpy(), y.numpy()
+
 
 def evaluate_all(query_features, gallery_features, distmat, query=None, gallery=None,
                  query_ids=None, gallery_ids=None,
@@ -89,7 +94,7 @@ def evaluate_all(query_features, gallery_features, distmat, query=None, gallery=
         'market1501': dict(separate_camera_set=False,
                            single_gallery_shot=False,
                            first_match_break=True)
-                }
+    }
     cmc_scores = {name: cmc(distmat, query_ids, gallery_ids,
                             query_cams, gallery_cams, **params)
                   for name, params in cmc_configs.items()}
@@ -98,7 +103,7 @@ def evaluate_all(query_features, gallery_features, distmat, query=None, gallery=
     for k in cmc_topk:
         print('  top-{:<4}{:12.1%}'
               .format(k,
-                      cmc_scores['market1501'][k-1]))
+                      cmc_scores['market1501'][k - 1]))
     return cmc_scores['market1501'][0], mAP
 
 
@@ -113,7 +118,8 @@ class Evaluator(object):
         else:
             features = pre_features
         distmat, query_features, gallery_features = pairwise_distance(features, query, gallery, metric=metric)
-        results = evaluate_all(query_features, gallery_features, distmat, query=query, gallery=gallery, cmc_flag=cmc_flag)
+        results = evaluate_all(query_features, gallery_features, distmat, query=query, gallery=gallery,
+                               cmc_flag=cmc_flag)
         if (not rerank):
             return results
 

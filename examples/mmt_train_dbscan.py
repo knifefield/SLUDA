@@ -145,13 +145,14 @@ def main_worker(args):
     dataset_source = get_data(args.dataset_source, args.data_dir)
     dataset_target = get_data(args.dataset_target, args.data_dir)
     test_loader_target = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers)
+    # test loader = gallery + query from target
     tar_cluster_loader = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers,
                                          testset=dataset_target.train)
     sour_cluster_loader = get_test_loader(dataset_source, args.height, args.width, args.batch_size, args.workers,
                                           testset=dataset_source.train)
 
     # Create model
-    model_1, model_2, model_1_ema, model_2_ema = create_model(args, len(dataset_target.train))
+    model_1, model_2, model_1_ema, model_2_ema = create_model(args, len(dataset_target.train))  # 所有训练数据的个数
 
     # Evaluator
     evaluator_1_ema = Evaluator(model_1_ema)

@@ -73,7 +73,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
     ])
 
     if (testset is None):
-        testset = list(set(dataset.query) | set(dataset.gallery))
+        testset = list(set(dataset.query) | set(dataset.gallery))  # 元素的并集 再转成list , set()是无序不重复的元素集
 
     test_loader = DataLoader(
         Preprocessor(testset, root=dataset.images_dir, transform=test_transformer),
@@ -143,8 +143,10 @@ def main_worker(args):
     iters = args.iters if (args.iters > 0) else None
     dataset_target = get_data(args.dataset_target, args.data_dir)
     test_loader_target = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers)
+    # test loader target 包含data set target的query和gallery
     cluster_loader = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers,
                                      testset=dataset_target.train)
+    # cluster loader 只包含data set target 的 train
 
     # Create model
     model_1, model_2, model_1_ema, model_2_ema = create_model(args)
@@ -154,8 +156,11 @@ def main_worker(args):
     evaluator_2_ema = Evaluator(model_2_ema)
 
     for epoch in range(args.epochs):
-        dict_f, _ = extract_features(model_1_ema, cluster_loader, print_freq=50)
+        dict_f, _ = extract_features(model_1_ema, cluster_loader, print_freq=50)  # 返回的是features labels的字典
         cf_1 = torch.stack(list(dict_f.values())).numpy()
+        # dict_f.values()返回字典中的所有值
+        # list()将元组转换为列表
+        # torch.stack()沿着一个新维度对输入张量序列进行扩维连接，dim参数默认为0，形成n*x*y张量
         dict_f, _ = extract_features(model_2_ema, cluster_loader, print_freq=50)
         cf_2 = torch.stack(list(dict_f.values())).numpy()
         cf = (cf_1 + cf_2) / 2
