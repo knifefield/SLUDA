@@ -10,9 +10,9 @@ if [ $# -ne 4 ]
     exit 1
 fi
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 \
+CUDA_VISIBLE_DEVICES=0 \
 python examples/source_pretrain.py -ds ${SOURCE} -dt ${TARGET} -a ${ARCH} --seed ${SEED} --margin 0.0 \
-	--num-instances 4 -b 64 -j 4 --warmup-step 10 --lr 0.00035 --milestones 40 70 --iters 100 --epochs 80 --eval-step 40 \
+	--num-instances 4 -b 64 -j 0 --warmup-step 10 --lr 0.00035 --milestones 40 70 --iters 100 --epochs 80 --eval-step 40 \
 	--logs-dir logs/${SOURCE}TO${TARGET}/${ARCH}-pretrain-${SEED}
 # sh scripts/pretrain.sh dukemtmc market1501 resnet50 1
 # sh scripts/pretrain.sh dukemtmc market1501 resnet50 2
