@@ -166,17 +166,19 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2
         cf = F.normalize(cf, dim=1)
 
-        if (args.lambda_value > 0):
-            dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)
-            cf_1 = torch.stack(list(dict_f.values()))
-            dict_f, _ = extract_features(model_2_ema, sour_cluster_loader, print_freq=50)
-            cf_2 = torch.stack(list(dict_f.values()))
-            cf_s = (cf_1 + cf_2) / 2
-            cf_s = F.normalize(cf_s, dim=1)
-            rerank_dist = compute_jaccard_dist(cf, lambda_value=args.lambda_value, source_features=cf_s,
-                                               use_gpu=args.rr_gpu).numpy()
-        else:
-            rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
+        # if args.lambda_value > 0:
+        #     dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)
+        #     cf_1 = torch.stack(list(dict_f.values()))
+        #     dict_f, _ = extract_features(model_2_ema, sour_cluster_loader, print_freq=50)
+        #     cf_2 = torch.stack(list(dict_f.values()))
+        #     cf_s = (cf_1 + cf_2) / 2
+        #     cf_s = F.normalize(cf_s, dim=1)
+        #     rerank_dist = compute_jaccard_dist(cf, lambda_value=args.lambda_value, source_features=cf_s,
+        #                                        use_gpu=args.rr_gpu).numpy()
+        # else:
+        #     rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
+
+        rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
 
         if (epoch == 0):
             # DBSCAN cluster
