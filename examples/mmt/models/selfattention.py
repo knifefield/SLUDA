@@ -117,6 +117,11 @@ class SAN(nn.Module):
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(c, num_classes)
+        self.num_classes = num_classes
+        self.num_features = c
+        if self.num_classes > 0:
+            self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
+            nn.init.normal_(self.classifier.weight, std=0.001)
 
     def _make_layer(self, sa_type, block, planes, blocks, kernel_size=7, stride=1):
         layers = []
@@ -134,8 +139,10 @@ class SAN(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        return x
+        # x = self.fc(x)
+        if self.num_classes > 0:
+            prob = self.classifier(x)
+        return x, prob
 
 
 def san(**kwargs):

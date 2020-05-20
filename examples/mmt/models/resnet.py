@@ -6,7 +6,6 @@ from torch.nn import init
 import torchvision
 import torch
 
-
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152']
 
@@ -30,15 +29,15 @@ class ResNet(nn.Module):
         if depth not in ResNet.__factory:
             raise KeyError("Unsupported depth:", depth)
         resnet = ResNet.__factory[depth](pretrained=pretrained)
-        resnet.layer4[0].conv2.stride = (1,1)
-        resnet.layer4[0].downsample[0].stride = (1,1)
+        resnet.layer4[0].conv2.stride = (1, 1)
+        resnet.layer4[0].downsample[0].stride = (1, 1)
         self.base = nn.Sequential(
-            resnet.conv1, resnet.bn1, resnet.maxpool, # no relu
+            resnet.conv1, resnet.bn1, resnet.maxpool,  # no relu
             resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
         self.gap = nn.AdaptiveAvgPool2d(1)
 
         if not self.cut_at_pooling:
-            self.num_features = num_features
+            self.num_features = num_features  # 这里是0
             self.norm = norm
             self.dropout = dropout
             self.has_embedding = num_features > 0
@@ -47,7 +46,8 @@ class ResNet(nn.Module):
             out_planes = resnet.fc.in_features
 
             # Append new layers
-            if self.has_embedding:
+            if self.has_embedding:  # 这里也是0
+                print('has_embedding')
                 self.feat = nn.Linear(out_planes, self.num_features)
                 self.feat_bn = nn.BatchNorm1d(self.num_features)
                 init.kaiming_normal_(self.feat.weight, mode='fan_out')
@@ -70,7 +70,6 @@ class ResNet(nn.Module):
 
     def forward(self, x, feature_withbn=False):
         x = self.base(x)
-
         x = self.gap(x)
         x = x.view(x.size(0), -1)
 
@@ -81,10 +80,6 @@ class ResNet(nn.Module):
             bn_x = self.feat_bn(self.feat(x))
         else:
             bn_x = self.feat_bn(x)
-
-        if self.training is False:
-            bn_x = F.normalize(bn_x)
-            return bn_x
 
         if self.norm:
             bn_x = F.normalize(bn_x)
@@ -128,6 +123,7 @@ class ResNet(nn.Module):
         self.base[4].load_state_dict(resnet.layer2.state_dict())
         self.base[5].load_state_dict(resnet.layer3.state_dict())
         self.base[6].load_state_dict(resnet.layer4.state_dict())
+
 
 def resnet18(**kwargs):
     return ResNet(18, **kwargs)
