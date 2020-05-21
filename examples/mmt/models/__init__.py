@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from .resnet import *
+from .myresnet import *
 from .resnet_ibn import *
 from .selfattention import san
 

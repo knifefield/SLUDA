@@ -4,7 +4,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch.nn import init
 import torchvision
-import torch
 
 from .non_local import NONLocalBlock2D
 
