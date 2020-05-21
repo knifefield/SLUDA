@@ -119,14 +119,13 @@ class SAN(nn.Module):
         self.feat_bn = nn.BatchNorm1d(c)
         self.fc = nn.Linear(c, num_classes)
 
-
     def _make_layer(self, sa_type, block, planes, blocks, kernel_size=7, stride=1):
         layers = []
         for _ in range(0, blocks):
             layers.append(block(sa_type, planes, planes // 16, planes // 4, planes, 8, kernel_size, stride))
         return nn.Sequential(*layers)
 
-    def forward(self, x, feature_withbn=False):
+    def forward(self, x):
         x = self.relu(self.bn_in(self.conv_in(x)))
         x = self.relu(self.bn0(self.layer0(self.conv0(self.pool(x)))))
         x = self.relu(self.bn1(self.layer1(self.conv1(self.pool(x)))))
@@ -139,8 +138,6 @@ class SAN(nn.Module):
         bn_x = self.feat_bn(x)
         prob = self.fc(bn_x)
 
-        if feature_withbn:
-            return bn_x, prob
         return x, prob
 
 

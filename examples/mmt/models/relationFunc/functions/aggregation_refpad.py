@@ -4,7 +4,6 @@ from torch.nn.modules.utils import _pair
 
 from .utils import Dtype, Stream, load_kernel
 
-
 CUDA_NUM_THREADS = 1024
 
 kernel_loop = '''
@@ -53,7 +52,6 @@ const ${Dtype}* bottom_data, const ${Dtype}* weight_data, ${Dtype}* top_data) {
 }
 '''
 
-
 _aggregation_refpad_input_backward_kernel = kernel_loop + '''
 extern "C"
 __global__ void aggregation_refpad_input_backward_kernel(
@@ -83,7 +81,6 @@ __global__ void aggregation_refpad_input_backward_kernel(
   }
 }
 '''
-
 
 _aggregation_refpad_weight_backward_kernel = kernel_loop + '''
 extern "C"
@@ -137,7 +134,8 @@ class AggregationRefpad(Function):
         output = input.new(batch_size, input_channels, output_height, output_width)
         n = output.numel()
         with torch.cuda.device_of(input):
-            f = load_kernel('aggregation_refpad_forward_kernel', _aggregation_refpad_forward_kernel, Dtype=Dtype(input), nthreads=n,
+            f = load_kernel('aggregation_refpad_forward_kernel', _aggregation_refpad_forward_kernel, Dtype=Dtype(input),
+                            nthreads=n,
                             num=batch_size, input_channels=input_channels, weight_channels=weight_channels,
                             bottom_height=input_height, bottom_width=input_width,
                             top_height=output_height, top_width=output_width,
@@ -173,25 +171,32 @@ class AggregationRefpad(Function):
                    pad_h=padding[0], pad_w=padding[1])
         with torch.cuda.device_of(input):
             if ctx.needs_input_grad[0]:
-                grad_input = input.new(batch_size, input_channels, input_height + 2 * padding[0], input_width + 2 * padding[1])
+                grad_input = input.new(batch_size, input_channels, input_height + 2 * padding[0],
+                                       input_width + 2 * padding[1])
                 n = grad_input.numel()
                 opt['nthreads'] = n
-                f = load_kernel('aggregation_refpad_input_backward_kernel', _aggregation_refpad_input_backward_kernel, **opt)
+                f = load_kernel('aggregation_refpad_input_backward_kernel', _aggregation_refpad_input_backward_kernel,
+                                **opt)
                 f(block=(CUDA_NUM_THREADS, 1, 1),
                   grid=(GET_BLOCKS(n), 1, 1),
                   args=[grad_output.data_ptr(), weight.data_ptr(), grad_input.data_ptr()],
                   stream=Stream(ptr=torch.cuda.current_stream().cuda_stream))
-                grad_input[:, :, padding[0] + 1:2 * padding[0] + 1, :] += torch.flip(grad_input[:, :, :padding[0], :], dims=[2])
-                grad_input[:, :, input_width - 1:input_width + padding[0] - 1, :] += torch.flip(grad_input[:, :, input_width + padding[0]:, :], dims=[2])
-                grad_input[:, :, :, padding[1] + 1:2 * padding[1] + 1] += torch.flip(grad_input[:, :, :, :padding[1]], dims=[3])
-                grad_input[:, :, :, input_width - 1:input_width + padding[1] - 1] += torch.flip(grad_input[:, :, :, input_width + padding[1]:], dims=[3])
-                grad_input = grad_input[:, :, padding[0]:padding[0]+input_width, padding[1]:padding[1]+input_width]
+                grad_input[:, :, padding[0] + 1:2 * padding[0] + 1, :] += torch.flip(grad_input[:, :, :padding[0], :],
+                                                                                     dims=[2])
+                grad_input[:, :, input_width - 1:input_width + padding[0] - 1, :] += torch.flip(
+                    grad_input[:, :, input_width + padding[0]:, :], dims=[2])
+                grad_input[:, :, :, padding[1] + 1:2 * padding[1] + 1] += torch.flip(grad_input[:, :, :, :padding[1]],
+                                                                                     dims=[3])
+                grad_input[:, :, :, input_width - 1:input_width + padding[1] - 1] += torch.flip(
+                    grad_input[:, :, :, input_width + padding[1]:], dims=[3])
+                grad_input = grad_input[:, :, padding[0]:padding[0] + input_width, padding[1]:padding[1] + input_width]
 
             if ctx.needs_input_grad[1]:
                 grad_weight = weight.new(weight.size())
                 n = grad_weight.numel() // weight.shape[2]
                 opt['nthreads'] = n
-                f = load_kernel('aggregation_refpad_weight_backward_kernel', _aggregation_refpad_weight_backward_kernel, **opt)
+                f = load_kernel('aggregation_refpad_weight_backward_kernel', _aggregation_refpad_weight_backward_kernel,
+                                **opt)
                 f(block=(CUDA_NUM_THREADS, 1, 1),
                   grid=(GET_BLOCKS(n), 1, 1),
                   args=[grad_output.data_ptr(), input.data_ptr(), grad_weight.data_ptr()],
@@ -235,7 +240,8 @@ def test_aggregation_refpad():
     assert (gw1 - gw2).abs().max() < 1e-9
 
     from functools import partial
-    assert torch.autograd.gradcheck(partial(aggregation_refpad, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation), (x, w))
+    assert torch.autograd.gradcheck(
+        partial(aggregation_refpad, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation), (x, w))
     print('test case passed')
 
 
