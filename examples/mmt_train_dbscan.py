@@ -163,8 +163,8 @@ def main_worker(args):
         cf_1 = torch.stack(list(dict_f.values()))
         dict_f, _ = extract_features(model_2_ema, tar_cluster_loader, print_freq=50)
         cf_2 = torch.stack(list(dict_f.values()))
-        cf = (cf_1 + cf_2) / 2
-        cf = F.normalize(cf, dim=1)
+        cf = (cf_1 + cf_2) / 2  # 分别从两个meanNet中提取图片特征，然后相加求均值，得到最终特征表示
+        cf = F.normalize(cf, dim=1)  # 2范数
 
         # if args.lambda_value > 0:
         #     dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)

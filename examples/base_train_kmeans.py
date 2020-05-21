@@ -24,28 +24,27 @@ from mmt.utils.data.preprocessor import Preprocessor
 from mmt.utils.logging import Logger
 from mmt.utils.serialization import load_checkpoint, save_checkpoint, copy_state_dict
 
-
 best_mAP = 0
+
 
 def get_data(name, data_dir):
     root = osp.join(data_dir, name)
     dataset = datasets.create(name, root)
     return dataset
 
-def get_train_loader(dataset, height, width, batch_size, workers,
-                    num_instances, iters):
 
+def get_train_loader(dataset, height, width, batch_size, workers, num_instances, iters):
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
     train_transformer = T.Compose([
-             T.Resize((height, width), interpolation=3),
-             T.RandomHorizontalFlip(p=0.5),
-             T.Pad(10),
-             T.RandomCrop((height, width)),
-             T.ToTensor(),
-             normalizer,
-	         T.RandomErasing(probability=0.5, mean=[0.485, 0.456, 0.406])
-         ])
+        T.Resize((height, width), interpolation=3),
+        T.RandomHorizontalFlip(p=0.5),
+        T.Pad(10),
+        T.RandomCrop((height, width)),
+        T.ToTensor(),
+        normalizer,
+        T.RandomErasing(probability=0.5, mean=[0.485, 0.456, 0.406])
+    ])
 
     train_set = sorted(dataset.train)
     rmgs_flag = num_instances > 0
@@ -54,22 +53,23 @@ def get_train_loader(dataset, height, width, batch_size, workers,
     else:
         sampler = None
     train_loader = IterLoader(
-                DataLoader(Preprocessor(train_set, root=dataset.images_dir,
-                                        transform=train_transformer, mutual=False),
-                            batch_size=batch_size, num_workers=workers, sampler=sampler,
-                            shuffle=not rmgs_flag, pin_memory=True, drop_last=True), length=iters)
+        DataLoader(Preprocessor(train_set, root=dataset.images_dir,
+                                transform=train_transformer, mutual=False),
+                   batch_size=batch_size, num_workers=workers, sampler=sampler,
+                   shuffle=not rmgs_flag, pin_memory=True, drop_last=True), length=iters)
 
     return train_loader
+
 
 def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
 
     test_transformer = T.Compose([
-             T.Resize((height, width), interpolation=3),
-             T.ToTensor(),
-             normalizer
-         ])
+        T.Resize((height, width), interpolation=3),
+        T.ToTensor(),
+        normalizer
+    ])
 
     if (testset is None):
         testset = list(set(dataset.query) | set(dataset.gallery))
@@ -81,8 +81,9 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
 
     return test_loader
 
+
 def create_model(args):
-    model = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters)
+    model = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters)
 
     model.cuda()
     model = nn.DataParallel(model)
@@ -114,11 +115,12 @@ def main_worker(args):
     print("==========\nArgs:{}\n==========".format(args))
 
     # Create data loaders
-    iters = args.iters if (args.iters>0) else None
+    iters = args.iters if (args.iters > 0) else None
     dataset_target = get_data(args.dataset_target, args.data_dir)
     test_loader_target = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers)
-    cluster_loader = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers, testset=dataset_target.train)
-    
+    cluster_loader = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers,
+                                     testset=dataset_target.train)
+
     # Create model
     model = create_model(args)
 
@@ -132,7 +134,8 @@ def main_worker(args):
         print('\n Clustering into {} classes \n'.format(args.num_clusters))
         km = KMeans(n_clusters=args.num_clusters, random_state=args.seed, n_jobs=2).fit(cf)
 
-        model.module.classifier.weight.data.copy_(torch.from_numpy(normalize(km.cluster_centers_, axis=1)).float().cuda())
+        model.module.classifier.weight.data.copy_(
+            torch.from_numpy(normalize(km.cluster_centers_, axis=1)).float().cuda())
 
         target_label = km.labels_
 
@@ -143,7 +146,7 @@ def main_worker(args):
             dataset_target.train[i] = tuple(dataset_target.train[i])
 
         train_loader_target = get_train_loader(dataset_target, args.height, args.width,
-                                            args.batch_size, args.workers, args.num_instances, iters)
+                                               args.batch_size, args.workers, args.num_instances, iters)
 
         # Optimizer
         params = []
@@ -159,7 +162,7 @@ def main_worker(args):
         train_loader_target.new_epoch()
 
         trainer.train(epoch, train_loader_target, optimizer,
-                    print_freq=args.print_freq, train_iters=len(train_loader_target))
+                      print_freq=args.print_freq, train_iters=len(train_loader_target))
 
         def save_model(model, is_best, best_mAP):
             save_checkpoint({
@@ -168,19 +171,20 @@ def main_worker(args):
                 'best_mAP': best_mAP,
             }, is_best, fpath=osp.join(args.logs_dir, 'checkpoint.pth.tar'))
 
-        if ((epoch+1)%args.eval_step==0 or (epoch==args.epochs-1)):
+        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
             mAP = evaluator.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery, cmc_flag=False)
-            is_best = (mAP>best_mAP)
+            is_best = (mAP > best_mAP)
             best_mAP = max(mAP, best_mAP)
             save_model(model, is_best, best_mAP)
 
             print('\n * Finished epoch {:3d}  model mAP: {:5.1%} best: {:5.1%}{}\n'.
                   format(epoch, mAP, best_mAP, ' *' if is_best else ''))
 
-    print ('Test on the best model.')
+    print('Test on the best model.')
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.load_state_dict(checkpoint['state_dict'])
     evaluator.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery, cmc_flag=True)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Cluster Baseline Training")

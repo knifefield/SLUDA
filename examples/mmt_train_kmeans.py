@@ -87,10 +87,8 @@ def create_model(args):
     model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters)
     model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters)
 
-    model_1_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout,
-                                num_classes=args.num_clusters)
-    model_2_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout,
-                                num_classes=args.num_clusters)
+    model_1_ema = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters)
+    model_2_ema = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters)
 
     model_1.cuda()
     model_2.cuda()
