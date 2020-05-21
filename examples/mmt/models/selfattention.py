@@ -126,7 +126,7 @@ class SAN(nn.Module):
             layers.append(block(sa_type, planes, planes // 16, planes // 4, planes, 8, kernel_size, stride))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, feature_withbn=False):
         x = self.relu(self.bn_in(self.conv_in(x)))
         x = self.relu(self.bn0(self.layer0(self.conv0(self.pool(x)))))
         x = self.relu(self.bn1(self.layer1(self.conv1(self.pool(x)))))
@@ -136,8 +136,11 @@ class SAN(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        prob = self.fc(self.feat_bn(x))
+        bn_x = self.feat_bn(x)
+        prob = self.fc(bn_x)
 
+        if feature_withbn:
+            return bn_x, prob
         return x, prob
 
 
