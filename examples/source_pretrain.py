@@ -155,7 +155,7 @@ def main_worker(args):
         trainer.train(epoch, train_loader_source, train_loader_target, optimizer,
                       train_iters=len(train_loader_source), print_freq=args.print_freq)
 
-        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
+        if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             _, mAP = evaluator.evaluate(test_loader_source, dataset_source.query, dataset_source.gallery, cmc_flag=True)
 
             is_best = mAP > best_mAP

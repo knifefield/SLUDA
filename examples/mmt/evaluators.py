@@ -113,14 +113,14 @@ class Evaluator(object):
         self.model = model
 
     def evaluate(self, data_loader, query, gallery, metric=None, cmc_flag=False, rerank=False, pre_features=None):
-        if (pre_features is None):
+        if pre_features is None:
             features, _ = extract_features(self.model, data_loader)
         else:
             features = pre_features
         distmat, query_features, gallery_features = pairwise_distance(features, query, gallery, metric=metric)
         results = evaluate_all(query_features, gallery_features, distmat, query=query, gallery=gallery,
                                cmc_flag=cmc_flag)
-        if (not rerank):
+        if not rerank:
             return results
 
         print('Applying person re-ranking ...')
