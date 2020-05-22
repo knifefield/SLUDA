@@ -1,12 +1,8 @@
 from __future__ import print_function, absolute_import
 import time
 
-import torch
-import torch.nn as nn
-from torch.nn import functional as F
-
 from .evaluation_metrics import accuracy
-from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy
+from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy, OIMLoss
 from .utils.meters import AverageMeter
 
 
