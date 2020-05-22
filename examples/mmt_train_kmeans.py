@@ -166,6 +166,10 @@ def main_worker(args):
         print('\n Clustering into {} classes \n'.format(args.num_clusters))
         km = KMeans(n_clusters=args.num_clusters, random_state=args.seed, n_jobs=2).fit(cf)
 
+        # 聚类后的各个类的中心，将这些中心标准化以后直接赋值到了线性层的参数中
+        # 我们假设一个线性层的输入特征是M维的，输出是N维的，如果不加思考的化，就是一个M维到N维的转换。但是深入一点的思考的化，其实
+        # 可以将其理解为：将M维的向量，与N个M维的向量（Normalize后则是单位向量）做内积，生成了N个内积，内积i代表着输入特征在第i个
+        # 向量上的投影，这个值越大，代表着输入向量与这个向量的关系越紧密。
         model_1.module.classifier.weight.data.copy_(
             torch.from_numpy(normalize(km.cluster_centers_, axis=1)).float().cuda())
         model_2.module.classifier.weight.data.copy_(

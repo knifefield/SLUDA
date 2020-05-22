@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from .base_dataset import BaseImageDataset
 from .preprocessor import Preprocessor
 
+
 class IterLoader:
     def __init__(self, loader, length=None):
         self.loader = loader
@@ -10,7 +11,7 @@ class IterLoader:
         self.iter = None
 
     def __len__(self):
-        if (self.length is not None):
+        if self.length is not None:
             return self.length
         return len(self.loader)
 

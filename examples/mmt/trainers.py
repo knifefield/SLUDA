@@ -85,6 +85,7 @@ class PreTrainer(object):
 
         return loss_ce, loss_tr, prec
 
+
 class ClusterBaseTrainer(object):
     def __init__(self, model, num_cluster=500):
         super(ClusterBaseTrainer, self).__init__()
@@ -114,7 +115,7 @@ class ClusterBaseTrainer(object):
 
             # forward
             f_out_t, p_out_t = self.model(inputs)
-            p_out_t = p_out_t[:,:self.num_cluster]
+            p_out_t = p_out_t[:, :self.num_cluster]
 
             loss_ce = self.criterion_ce(p_out_t, targets)
             loss_tri = self.criterion_tri(f_out_t, f_out_t, targets)
@@ -157,7 +158,7 @@ class ClusterBaseTrainer(object):
 
 class MMTTrainer(object):
     def __init__(self, model_1, model_2,
-                       model_1_ema, model_2_ema, num_cluster=500, alpha=0.999):
+                 model_1_ema, model_2_ema, num_cluster=500, alpha=0.999):
         super(MMTTrainer, self).__init__()
         self.model_1 = model_1
         self.model_2 = model_2
@@ -173,7 +174,7 @@ class MMTTrainer(object):
         self.criterion_tri_soft = SoftTripletLoss(margin=None).cuda()
 
     def train(self, epoch, data_loader_target,
-            optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
+              optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
         self.model_1.train()
         self.model_2.train()
         self.model_1_ema.train()
@@ -182,11 +183,11 @@ class MMTTrainer(object):
         batch_time = AverageMeter()
         data_time = AverageMeter()
 
-        losses_ce = [AverageMeter(),AverageMeter()]
-        losses_tri = [AverageMeter(),AverageMeter()]
+        losses_ce = [AverageMeter(), AverageMeter()]
+        losses_tri = [AverageMeter(), AverageMeter()]
         losses_ce_soft = AverageMeter()
         losses_tri_soft = AverageMeter()
-        precisions = [AverageMeter(),AverageMeter()]
+        precisions = [AverageMeter(), AverageMeter()]
 
         end = time.time()
         for i in range(train_iters):
@@ -199,13 +200,13 @@ class MMTTrainer(object):
             # forward
             f_out_t1, p_out_t1 = self.model_1(inputs_1)
             f_out_t2, p_out_t2 = self.model_2(inputs_2)
-            p_out_t1 = p_out_t1[:,:self.num_cluster]
-            p_out_t2 = p_out_t2[:,:self.num_cluster]
+            p_out_t1 = p_out_t1[:, :self.num_cluster]
+            p_out_t2 = p_out_t2[:, :self.num_cluster]
 
             f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1)
             f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2)
-            p_out_t1_ema = p_out_t1_ema[:,:self.num_cluster]
-            p_out_t2_ema = p_out_t2_ema[:,:self.num_cluster]
+            p_out_t1_ema = p_out_t1_ema[:, :self.num_cluster]
+            p_out_t2_ema = p_out_t2_ema[:, :self.num_cluster]
 
             loss_ce_1 = self.criterion_ce(p_out_t1, targets)
             loss_ce_2 = self.criterion_ce(p_out_t2, targets)
@@ -213,20 +214,21 @@ class MMTTrainer(object):
             loss_tri_1 = self.criterion_tri(f_out_t1, f_out_t1, targets)
             loss_tri_2 = self.criterion_tri(f_out_t2, f_out_t2, targets)
 
-            loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2, p_out_t1_ema)
+            loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
+                                                                                                   p_out_t1_ema)
             loss_tri_soft = self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) + \
                             self.criterion_tri_soft(f_out_t2, f_out_t1_ema, targets)
 
-            loss = (loss_ce_1 + loss_ce_2)*(1-ce_soft_weight) + \
-                     (loss_tri_1 + loss_tri_2)*(1-tri_soft_weight) + \
-                     loss_ce_soft*ce_soft_weight + loss_tri_soft*tri_soft_weight
+            loss = (loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) + \
+                   (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) + \
+                   loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            self._update_ema_variables(self.model_1, self.model_1_ema, self.alpha, epoch*len(data_loader_target)+i)
-            self._update_ema_variables(self.model_2, self.model_2_ema, self.alpha, epoch*len(data_loader_target)+i)
+            self._update_ema_variables(self.model_1, self.model_1_ema, self.alpha, epoch * len(data_loader_target) + i)
+            self._update_ema_variables(self.model_2, self.model_2_ema, self.alpha, epoch * len(data_loader_target) + i)
 
             prec_1, = accuracy(p_out_t1.data, targets.data)
             prec_2, = accuracy(p_out_t2.data, targets.data)
