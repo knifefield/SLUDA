@@ -183,6 +183,7 @@ class MMTTrainer(object):
         losses_tri = [AverageMeter(), AverageMeter()]
         losses_ce_soft = AverageMeter()
         losses_tri_soft = AverageMeter()
+        losses_oim = AverageMeter()
         precisions = [AverageMeter(), AverageMeter()]
 
         end = time.time()
