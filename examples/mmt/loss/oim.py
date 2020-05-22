@@ -50,3 +50,25 @@ class OIMLoss(nn.Module):
         loss = F.cross_entropy(inputs, targets, weight=self.weight,
                                size_average=self.size_average)
         return loss, inputs
+
+
+class SoftOIMLoss(nn.Module):
+    def __init__(self, num_features, num_classes, scalar=1.0, momentum=0.5,
+                 weight=None, size_average=True):
+        super(SoftOIMLoss, self).__init__()
+        self.num_features = num_features
+        self.num_classes = num_classes
+        self.momentum = momentum
+        self.scalar = scalar
+        self.weight = weight
+        self.size_average = size_average
+        self.logsoftmax = nn.LogSoftmax(dim=1).cuda()
+        self.register_buffer('lut', torch.zeros(num_classes, num_features))
+
+    def forward(self, inputs, targets):
+        inputs = oim(inputs, targets, self.lut, momentum=self.momentum)
+        inputs *= self.scalar
+        log_probs = self.logsoftmax(inputs)
+        loss = (- F.softmax(targets, dim=1).detach() * log_probs).mean(0).sum()
+        # loss = F.cross_entropy(inputs, targets, weight=self.weight, size_average=self.size_average)
+        return loss, inputs

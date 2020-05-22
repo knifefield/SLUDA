@@ -204,7 +204,8 @@ def main_worker(args):
 
         # Trainer
         trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema,
-                             num_cluster=args.num_clusters, alpha=args.alpha)
+                             num_cluster=args.num_clusters, alpha=args.alpha, scalar=args.oim_scalar,
+                             momentum=args.oim_momentum)
 
         train_loader_target.new_epoch()
 
@@ -260,6 +261,11 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
+    # loss
+    parser.add_argument('--oim-scalar', type=float, default=30,
+                        help='reciprocal of the temperature in OIM loss')
+    parser.add_argument('--oim-momentum', type=float, default=0.5,
+                        help='momentum for updating the LUT in OIM loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
