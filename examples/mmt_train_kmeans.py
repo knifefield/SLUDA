@@ -204,8 +204,8 @@ def main_worker(args):
 
         # Trainer
         trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema,
-                             num_cluster=args.num_clusters, alpha=args.alpha, scalar=args.oim_scalar,
-                             momentum=args.oim_momentum)
+                             num_cluster=args.num_clusters, alpha=args.alpha, oim_scalar=args.oim_scalar,
+                             oim_momentum=args.oim_momentum)
 
         train_loader_target.new_epoch()
 
