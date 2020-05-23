@@ -158,7 +158,7 @@ class MMTTrainer(object):
         super(MMTTrainer, self).__init__()
         self.model_1 = model_1
         self.model_2 = model_2
-        self.num_cluster = args.num_cluster
+        self.num_cluster = args.num_clusters
 
         self.model_1_ema = model_1_ema
         self.model_2_ema = model_2_ema
