@@ -154,24 +154,25 @@ class ClusterBaseTrainer(object):
 
 class MMTTrainer(object):
     def __init__(self, model_1, model_2,
-                 model_1_ema, model_2_ema, num_cluster=500, alpha=0.999, oim_scalar=1.0, oim_momentum=0.5):
+                 model_1_ema, model_2_ema, args):
         super(MMTTrainer, self).__init__()
         self.model_1 = model_1
         self.model_2 = model_2
-        self.num_cluster = num_cluster
+        self.num_cluster = args.num_cluster
 
         self.model_1_ema = model_1_ema
         self.model_2_ema = model_2_ema
-        self.alpha = alpha
+        self.alpha = args.alpha
+        self.args = args
 
-        self.criterion_ce = CrossEntropyLabelSmooth(num_cluster).cuda()
+        self.criterion_ce = CrossEntropyLabelSmooth(self.num_cluster).cuda()
         self.criterion_ce_soft = SoftEntropy().cuda()
         self.criterion_tri = SoftTripletLoss(margin=0.0).cuda()
         self.criterion_tri_soft = SoftTripletLoss(margin=None).cuda()
-        self.criterion_oim = OIMLoss(model_1.module.num_features, self.num_cluster, scalar=oim_scalar,
-                                     momentum=oim_momentum).cuda()
-        self.criterion_oim_soft = SoftOIMLoss(model_1.module.num_features, self.num_cluster, scalar=oim_scalar,
-                                              momentum=oim_momentum).cuda()
+        self.criterion_oim = OIMLoss(model_1.module.num_features, self.num_cluster, scalar=args.oim_scalar,
+                                     momentum=args.oim_momentum).cuda()
+        self.criterion_oim_soft = SoftOIMLoss(model_1.module.num_features, self.num_cluster, scalar=args.oim_scalar,
+                                              momentum=args.oim_momentum).cuda()
 
     def train(self, epoch, data_loader_target,
               optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
@@ -228,13 +229,14 @@ class MMTTrainer(object):
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +
                              self.criterion_tri_soft(f_out_t2, f_out_t1_ema, targets))
 
-            # loss = ((loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) +
-            #         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
-            #         loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
-
-            loss = ((loss_oim_1 + loss_oim_2) * (1 - ce_soft_weight) +
-                    (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
-                    loss_oim_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
+            if self.args.use_oim:
+                loss = ((loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) +
+                        (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
+                        loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
+            else:
+                loss = ((loss_oim_1 + loss_oim_2) * (1 - ce_soft_weight) +
+                        (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
+                        loss_oim_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
 
             optimizer.zero_grad()
             loss.backward()
