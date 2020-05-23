@@ -218,7 +218,7 @@ def main_worker(args):
                 'best_mAP': best_mAP,
             }, is_best, fpath=osp.join(args.logs_dir, 'model' + str(mid) + '_checkpoint.pth.tar'))
 
-        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
+        if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             mAP_1 = evaluator_1_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
                                              cmc_flag=False)
             mAP_2 = evaluator_2_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,

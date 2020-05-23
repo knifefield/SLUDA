@@ -13,7 +13,7 @@ class OIM(autograd.Function):
 
     def forward(self, inputs, targets):
         self.save_for_backward(inputs, targets)
-        outputs = inputs.mm(self.lut.t())
+        outputs = inputs.mm(self.lut.t())  # t()表转置
         return outputs
 
     def backward(self, grad_outputs):
@@ -66,6 +66,7 @@ class SoftOIMLoss(nn.Module):
         self.register_buffer('lut', torch.zeros(num_classes, num_features))
 
     def forward(self, inputs, targets):
+        # inputs 64x2048
         inputs = oim(inputs, targets, self.lut, momentum=self.momentum)
         inputs *= self.scalar
         log_probs = self.logsoftmax(inputs)

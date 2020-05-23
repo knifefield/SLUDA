@@ -211,8 +211,8 @@ class MMTTrainer(object):
             p_out_t1_ema = p_out_t1_ema[:, :self.num_cluster]
             p_out_t2_ema = p_out_t2_ema[:, :self.num_cluster]
 
-            loss_oim_1 = self.criterion_oim(p_out_t1, targets)
-            loss_oim_2 = self.criterion_oim(p_out_t2, targets)
+            loss_oim_1 = self.criterion_oim(f_out_t1, targets)
+            loss_oim_2 = self.criterion_oim(f_out_t2, targets)
 
             loss_ce_1 = self.criterion_ce(p_out_t1, targets)
             loss_ce_2 = self.criterion_ce(p_out_t2, targets)
@@ -223,7 +223,7 @@ class MMTTrainer(object):
             loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
                                                                                                    p_out_t1_ema)
 
-            loss_oim_soft = self.criterion_oim_soft(p_out_t1, p_out_t2_ema) + self.criterion_oim_soft(p_out_t2,
+            loss_oim_soft = self.criterion_oim_soft(f_out_t1, f_out_t2_ema) + self.criterion_oim_soft(f_out_t2,
                                                                                                       p_out_t1_ema)
 
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +
