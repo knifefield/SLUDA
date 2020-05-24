@@ -223,7 +223,7 @@ class MMTTrainer(object):
             loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
                                                                                                    p_out_t1_ema)
 
-            loss_oim_soft = self.criterion_oim_soft(f_out_t1, f_out_t2_ema) + self.criterion_oim_soft(f_out_t2,
+            loss_oim_soft = self.criterion_oim_soft(f_out_t1, p_out_t2_ema) + self.criterion_oim_soft(f_out_t2,
                                                                                                       p_out_t1_ema)
 
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +

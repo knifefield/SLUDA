@@ -66,7 +66,6 @@ class SoftOIMLoss(nn.Module):
         self.register_buffer('lut', torch.zeros(num_classes, num_features))
 
     def forward(self, inputs, targets):
-        # inputs 64x2048
         inputs = oim(inputs, targets, self.lut, momentum=self.momentum)
         inputs *= self.scalar
         log_probs = self.logsoftmax(inputs)
