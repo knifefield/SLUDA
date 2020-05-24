@@ -233,8 +233,7 @@ def main_worker(args):
         optimizer = torch.optim.Adam(params)
 
         # Trainer
-        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema,
-                             num_cluster=args.num_clusters, alpha=args.alpha)
+        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args)
 
         train_loader_target.new_epoch()
 

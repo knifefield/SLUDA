@@ -203,8 +203,7 @@ def main_worker(args):
         optimizer = torch.optim.Adam(params)
 
         # Trainer
-        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema,
-                             num_cluster=args.num_clusters, alpha=args.alpha)
+        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args)
 
         train_loader_target.new_epoch()
 
@@ -219,7 +218,7 @@ def main_worker(args):
                 'best_mAP': best_mAP,
             }, is_best, fpath=osp.join(args.logs_dir, 'model' + str(mid) + '_checkpoint.pth.tar'))
 
-        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
+        if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             mAP_1 = evaluator_1_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
                                              cmc_flag=False)
             mAP_2 = evaluator_2_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
@@ -260,6 +259,13 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
+    # loss
+    parser.add_argument('--use-oim', action='store_true',
+                        help="use oim loss")
+    parser.add_argument('--oim-scalar', type=float, default=30,
+                        help='reciprocal of the temperature in OIM loss')
+    parser.add_argument('--oim-momentum', type=float, default=0.5,
+                        help='momentum for updating the LUT in OIM loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
