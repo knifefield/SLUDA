@@ -118,7 +118,7 @@ def compute_jaccard_dist(target_features, k1=20, k2=6, print_flag=True,
             print('source_features is not None.')
             source_features = source_features.cuda()
 
-    if ((lambda_value > 0) and (source_features is not None)):
+    if (lambda_value > 0) and (source_features is not None):
         M = source_features.size(0)
         sour_tar_dist = torch.pow(target_features, 2).sum(dim=1, keepdim=True).expand(N, M) + \
                         torch.pow(source_features, 2).sum(dim=1, keepdim=True).expand(M, N).t()
@@ -205,7 +205,7 @@ def compute_jaccard_dist(target_features, k1=20, k2=6, print_flag=True,
     if print_flag:
         print("Time cost: {}".format(time.time() - end))
 
-    if (lambda_value > 0):
+    if lambda_value > 0:
         return jaccard_dist * (1 - lambda_value) + source_dist * lambda_value
     else:
         return jaccard_dist

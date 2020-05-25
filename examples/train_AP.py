@@ -76,7 +76,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
         normalizer
     ])
 
-    if (testset is None):
+    if testset is None:
         testset = list(set(dataset.query) | set(dataset.gallery))
 
     test_loader = DataLoader(
@@ -167,53 +167,31 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2
         cf = F.normalize(cf, dim=1)
 
-        if (args.lambda_value > 0):
-            dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)
-            cf_1 = torch.stack(list(dict_f.values()))
-            dict_f, _ = extract_features(model_2_ema, sour_cluster_loader, print_freq=50)
-            cf_2 = torch.stack(list(dict_f.values()))
-            cf_s = (cf_1 + cf_2) / 2
-            cf_s = F.normalize(cf_s, dim=1)
-            rerank_dist = compute_jaccard_dist(cf, lambda_value=args.lambda_value, source_features=cf_s,
-                                               use_gpu=args.rr_gpu).numpy()
-        else:
-            rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
+        # if args.lambda_value > 0:
+        #     dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)
+        #     cf_1 = torch.stack(list(dict_f.values()))
+        #     dict_f, _ = extract_features(model_2_ema, sour_cluster_loader, print_freq=50)
+        #     cf_2 = torch.stack(list(dict_f.values()))
+        #     cf_s = (cf_1 + cf_2) / 2
+        #     cf_s = F.normalize(cf_s, dim=1)
+        #     rerank_dist = compute_jaccard_dist(cf, lambda_value=args.lambda_value, source_features=cf_s,
+        #                                        use_gpu=args.rr_gpu).numpy()
+        # else:
+        #     rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
 
-        if (epoch == 0):
+        if epoch == 0:
             # DBSCAN cluster
-            tri_mat = np.triu(rerank_dist, 1)  # tri_mat.dim=2
-            tri_mat = tri_mat[np.nonzero(tri_mat)]  # tri_mat.dim=1
-            tri_mat = np.sort(tri_mat, axis=None)
-            rho = 1.6e-3
-            top_num = np.round(rho * tri_mat.size).astype(int)
-            eps = tri_mat[:top_num].mean()
-            print('eps for cluster: {:.3f}'.format(eps))
-            cluster = DBSCAN(eps=eps, min_samples=4, metric='precomputed', n_jobs=-1)
-
-            # Plot result
-            import matplotlib.pyplot as plt
-            labels = cluster.fit_predict(rerank_dist)
-            unique_labels = set(labels)
-            colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
-            for k, col in zip(unique_labels, colors):
-                if k == -1:  # 聚类结果为-1的样本为离散点
-                    # 使用黑色绘制离散点
-                    col = [0, 0, 0, 1]
-
-                class_member_mask = (labels == k)  # 将所有属于该聚类的样本位置置为true
-                core_samples_mask = np.zeros_like(labels, dtype=bool)  # 设置一个样本个数长度的全false向量
-                core_samples_mask[cluster.core_sample_indices_] = True  # 将核心样本部分设置为true
-
-                xy = rerank_dist[class_member_mask & core_samples_mask]  # 将所有属于该类的核心样本取出，使用大图标绘制
-                plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col), markeredgecolor='k', markersize=14)
-
-                xy = rerank_dist[class_member_mask & ~core_samples_mask]  # 将所有属于该类的非核心样本取出，使用小图标绘制
-                plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col), markeredgecolor='k', markersize=6)
-
-            plt.show()
+            # tri_mat = np.triu(rerank_dist, 1)  # tri_mat.dim=2 返回上三角矩阵，第1个对角线的下面全是零，主对角线为第0对角线
+            # tri_mat = tri_mat[np.nonzero(tri_mat)]  # tri_mat.dim=1
+            # tri_mat = np.sort(tri_mat, axis=None)
+            # rho = 1.6e-3
+            # top_num = np.round(rho * tri_mat.size).astype(int)
+            # eps = tri_mat[:top_num].mean()
+            # print('eps for cluster: {:.3f}'.format(eps))
+            cluster = AffinityPropagation(preference=-50).fit(cf)
 
         print('Clustering and labeling...')
-        labels = cluster.fit_predict(rerank_dist)
+        labels = cluster.fit_predict(cf)
         num_ids = len(set(labels)) - (1 if -1 in labels else 0)
         args.num_clusters = num_ids
         print('\n Clustered into {} classes \n'.format(args.num_clusters))
@@ -254,8 +232,7 @@ def main_worker(args):
         optimizer = torch.optim.Adam(params)
 
         # Trainer
-        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema,
-                             num_cluster=args.num_clusters, alpha=args.alpha)
+        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args)
 
         train_loader_target.new_epoch()
 
@@ -270,7 +247,7 @@ def main_worker(args):
                 'best_mAP': best_mAP,
             }, is_best, fpath=osp.join(args.logs_dir, 'model' + str(mid) + '_checkpoint.pth.tar'))
 
-        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
+        if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             mAP_1 = evaluator_1_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
                                              cmc_flag=False)
             mAP_2 = evaluator_2_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
