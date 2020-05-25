@@ -110,11 +110,11 @@ def compute_jaccard_dist(target_features, k1=20, k2=6, print_flag=True,
                          lambda_value=0, source_features=None, use_gpu=False):
     end = time.time()
     N = target_features.size(0)
-    if (use_gpu):
+    if use_gpu:
         # accelerate matrix distance computing
         print('compute_jaccard_dist use gpu...')
         target_features = target_features.cuda()
-        if (source_features is not None):
+        if source_features is not None:
             print('source_features is not None.')
             source_features = source_features.cuda()
 

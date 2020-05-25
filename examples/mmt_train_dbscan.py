@@ -180,7 +180,7 @@ def main_worker(args):
 
         rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
 
-        if (epoch == 0):
+        if epoch == 0:
             # DBSCAN cluster
             tri_mat = np.triu(rerank_dist, 1)  # tri_mat.dim=2
             tri_mat = tri_mat[np.nonzero(tri_mat)]  # tri_mat.dim=1
