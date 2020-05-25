@@ -226,10 +226,10 @@ class MMTTrainer(object):
                         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
                         loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
             else:
-                loss_oim_1 = self.criterion_oim(f_out_t1, targets)
-                loss_oim_2 = self.criterion_oim(f_out_t2, targets)
-                loss_oim_soft = self.criterion_oim_soft(f_out_t1, p_out_t2_ema) + self.criterion_oim_soft(f_out_t2,
-                                                                                                          p_out_t1_ema)
+                loss_oim_1, p_out_t1 = self.criterion_oim(f_out_t1, targets)
+                loss_oim_2, p_out_t2 = self.criterion_oim(f_out_t2, targets)
+                loss_oim_soft, _ = (self.criterion_oim_soft(f_out_t1, p_out_t2_ema) +
+                                    self.criterion_oim_soft(f_out_t2, p_out_t1_ema))
                 print('------------------------use oim loss------------------------------')
                 print(type(loss_oim_1))
                 print(loss_oim_1.size())
