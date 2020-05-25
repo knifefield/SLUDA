@@ -246,14 +246,14 @@ class MMTTrainer(object):
             prec_1, = accuracy(p_out_t1.data, targets.data)
             prec_2, = accuracy(p_out_t2.data, targets.data)
 
-            if self.args.use_oim:
+            if not self.args.use_oim:
                 losses_ce[0].update(loss_ce_1.item())
                 losses_ce[1].update(loss_ce_2.item())
                 losses_ce_soft.update(loss_ce_soft.item())
             else:
-                losses_oim[0].update(loss_ce_1.item())
-                losses_oim[1].update(loss_ce_2.item())
-                losses_oim_soft.update(loss_ce_soft.item())
+                losses_oim[0].update(loss_oim_1.item())
+                losses_oim[1].update(loss_oim_2.item())
+                losses_oim_soft.update(loss_oim_soft.item())
             losses_tri[0].update(loss_tri_1.item())
             losses_tri[1].update(loss_tri_2.item())
             losses_tri_soft.update(loss_tri_soft.item())
@@ -287,7 +287,7 @@ class MMTTrainer(object):
                           'Data {:.3f} ({:.3f})\t'
                           'Loss_ce {:.3f} / {:.3f}\t'
                           'Loss_tri {:.3f} / {:.3f}\t'
-                          'Loss_oim_soft {:.3f}\t'
+                          'Loss_ce_soft {:.3f}\t'
                           'Loss_tri_soft {:.3f}\t'
                           'Prec {:.2%} / {:.2%}\t'
                           .format(epoch, i + 1, len(data_loader_target),
