@@ -214,24 +214,26 @@ class MMTTrainer(object):
             loss_tri_1 = self.criterion_tri(f_out_t1, f_out_t1, targets)
             loss_tri_2 = self.criterion_tri(f_out_t2, f_out_t2, targets)
 
-            loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
-                                                                                                   p_out_t1_ema)
-
-            loss_oim_soft = self.criterion_oim_soft(f_out_t1, p_out_t2_ema) + self.criterion_oim_soft(f_out_t2,
-                                                                                                      p_out_t1_ema)
-
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +
                              self.criterion_tri_soft(f_out_t2, f_out_t1_ema, targets))
 
             if not self.args.use_oim:
                 loss_ce_1 = self.criterion_ce(p_out_t1, targets)
                 loss_ce_2 = self.criterion_ce(p_out_t2, targets)
+                loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
+                                                                                                       p_out_t1_ema)
                 loss = ((loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) +
                         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
                         loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
             else:
                 loss_oim_1 = self.criterion_oim(f_out_t1, targets)
                 loss_oim_2 = self.criterion_oim(f_out_t2, targets)
+                loss_oim_soft = self.criterion_oim_soft(f_out_t1, p_out_t2_ema) + self.criterion_oim_soft(f_out_t2,
+                                                                                                          p_out_t1_ema)
+                print('------------------------use oim loss------------------------------')
+                print(type(loss_oim_1))
+                print(loss_oim_1.size())
+                print(type(loss_oim_soft))
                 loss = ((loss_oim_1 + loss_oim_2) * (1 - ce_soft_weight) +
                         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
                         loss_oim_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
