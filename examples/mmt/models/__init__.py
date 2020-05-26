@@ -3,14 +3,12 @@ from __future__ import absolute_import
 from .resnet import *
 from .myresnet import *
 from .resnet_ibn import *
-from .selfattention import san
 
 
 __factory = {
     'resnet18': resnet18,
     'resnet34': resnet34,
     'resnet50': resnet50,
-    'san': san,
     'myresnet': resnet_att,
     'resnet101': resnet101,
     'resnet152': resnet152,
