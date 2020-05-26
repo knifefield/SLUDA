@@ -188,7 +188,7 @@ def main_worker(args):
             # top_num = np.round(rho * tri_mat.size).astype(int)
             # eps = tri_mat[:top_num].mean()
             # print('eps for cluster: {:.3f}'.format(eps))
-            cluster = AffinityPropagation(preference=-50).fit(cf)
+            cluster = AffinityPropagation(damping=0.5, preference=None).fit(cf)
 
         print('Clustering and labeling...')
         labels = cluster.fit_predict(cf)
@@ -289,6 +289,13 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
+    # loss
+    parser.add_argument('--use-oim', action='store_true',
+                        help="use oim loss")
+    parser.add_argument('--oim-scalar', type=float, default=30,
+                        help='reciprocal of the temperature in OIM loss')
+    parser.add_argument('--oim-momentum', type=float, default=0.5,
+                        help='momentum for updating the LUT in OIM loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
