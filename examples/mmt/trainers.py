@@ -171,11 +171,10 @@ class MMTTrainer(object):
         self.criterion_tri_soft = SoftTripletLoss(margin=None).cuda()
         self.criterion_oim = OIMLoss(model_1.module.num_features, self.num_cluster, scalar=args.oim_scalar,
                                      momentum=args.oim_momentum).cuda()
-        self.criterion_oim_soft = SoftOIMLoss(model_1.module.num_features, self.num_cluster, scalar=args.oim_scalar,
-                                              momentum=args.oim_momentum).cuda()
 
     def train(self, epoch, data_loader_target,
               optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
+        # 训练模式，启用 BatchNormalization 和 Dropout
         self.model_1.train()
         self.model_2.train()
         self.model_1_ema.train()
@@ -216,24 +215,23 @@ class MMTTrainer(object):
 
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +
                              self.criterion_tri_soft(f_out_t2, f_out_t1_ema, targets))
-
+            loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
+                                                                                                   p_out_t1_ema)
             if not self.args.use_oim:
                 loss_ce_1 = self.criterion_ce(p_out_t1, targets)
                 loss_ce_2 = self.criterion_ce(p_out_t2, targets)
-                loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
-                                                                                                       p_out_t1_ema)
+
                 loss = ((loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) +
                         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
                         loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
             else:
                 loss_oim_1, p_out_t1 = self.criterion_oim(f_out_t1, targets)
                 loss_oim_2, p_out_t2 = self.criterion_oim(f_out_t2, targets)
-                loss_oim_soft = (self.criterion_ce_soft(p_out_t1, p_out_t2_ema) +
-                                 self.criterion_ce_soft(p_out_t2, p_out_t1_ema))
+
                 print('------------------------use oim loss------------------------------')
                 loss = ((loss_oim_1 + loss_oim_2) * (1 - ce_soft_weight) +
                         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
-                        loss_oim_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
+                        loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
 
             optimizer.zero_grad()
             loss.backward()
@@ -248,11 +246,11 @@ class MMTTrainer(object):
             if not self.args.use_oim:
                 losses_ce[0].update(loss_ce_1.item())
                 losses_ce[1].update(loss_ce_2.item())
-                losses_ce_soft.update(loss_ce_soft.item())
+
             else:
                 losses_oim[0].update(loss_oim_1.item())
                 losses_oim[1].update(loss_oim_2.item())
-                losses_oim_soft.update(loss_oim_soft.item())
+            losses_ce_soft.update(loss_ce_soft.item())
             losses_tri[0].update(loss_tri_1.item())
             losses_tri[1].update(loss_tri_2.item())
             losses_tri_soft.update(loss_tri_soft.item())
@@ -270,7 +268,7 @@ class MMTTrainer(object):
                           'Data {:.3f} ({:.3f})\t'
                           'Loss_oim {:.3f} / {:.3f}\t'
                           'Loss_tri {:.3f} / {:.3f}\t'
-                          'Loss_oim_soft {:.3f}\t'
+                          'Loss_ce_soft {:.3f}\t'
                           'Loss_tri_soft {:.3f}\t'
                           'Prec {:.2%} / {:.2%}\t'
                           .format(epoch, i + 1, len(data_loader_target),
@@ -278,7 +276,7 @@ class MMTTrainer(object):
                                   data_time.val, data_time.avg,
                                   losses_oim[0].avg, losses_oim[1].avg,
                                   losses_tri[0].avg, losses_tri[1].avg,
-                                  losses_oim_soft.avg, losses_tri_soft.avg,
+                                  losses_ce_soft.avg, losses_tri_soft.avg,
                                   precisions[0].avg, precisions[1].avg))
                 else:
                     print('Epoch: [{}][{}/{}]\t'
