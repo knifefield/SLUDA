@@ -154,7 +154,7 @@ class ClusterBaseTrainer(object):
 
 class MMTTrainer(object):
     def __init__(self, model_1, model_2,
-                 model_1_ema, model_2_ema, args, criterion):
+                 model_1_ema, model_2_ema, args, criterion_oim):
         super(MMTTrainer, self).__init__()
         self.model_1 = model_1
         self.model_2 = model_2
@@ -169,7 +169,7 @@ class MMTTrainer(object):
         self.criterion_ce_soft = SoftEntropy().cuda()
         self.criterion_tri = SoftTripletLoss(margin=0.0).cuda()
         self.criterion_tri_soft = SoftTripletLoss(margin=None).cuda()
-        self.criterion_oim = criterion
+        self.criterion_oim = criterion_oim
 
     def train(self, epoch, data_loader_target,
               optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
