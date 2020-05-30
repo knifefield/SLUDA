@@ -40,6 +40,7 @@ class MyResNet(nn.Module):
             resnet.conv1, resnet.bn1, resnet.maxpool,  # no relu
             resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
         self.gap = nn.AdaptiveAvgPool2d(1)
+        self.gmp = nn.AdaptiveMaxPool2d(1)
 
         if not self.cut_at_pooling:
             self.num_features = num_features
@@ -75,7 +76,9 @@ class MyResNet(nn.Module):
     def forward(self, x, feature_withbn=False):
         x = self.base(x)
 
-        x = self.gap(x)
+        x1 = self.gap(x)
+        x2 = self.gmp(x)
+        x = x1 + x2
         x = x.view(x.size(0), -1)
 
         if self.cut_at_pooling:

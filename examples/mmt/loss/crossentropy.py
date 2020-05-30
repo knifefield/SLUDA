@@ -29,11 +29,12 @@ class CrossEntropyLabelSmooth(nn.Module):
             targets: ground truth labels with shape (num_classes)
         """
         log_probs = self.logsoftmax(inputs)
+        # targets.unsqueeze(1)在1维处，增加一维，如[2,3]->[2,1,3],这样每一行都是一个[1,3]的数组
+        # scatter_(1,labels,1),对了labels做one-hot编码
         targets = torch.zeros_like(log_probs).scatter_(1, targets.unsqueeze(1), 1)
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         loss = (- targets * log_probs).mean(0).sum()
         return loss
-
 
 class SoftEntropy(nn.Module):
     def __init__(self):
