@@ -1,5 +1,6 @@
 from __future__ import print_function, absolute_import
 import time
+from torch.autograd import Variable
 
 from .evaluation_metrics import accuracy
 from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy, OIMLoss, SoftOIMLoss
@@ -197,6 +198,10 @@ class MMTTrainer(object):
 
             # process inputs
             inputs_1, inputs_2, targets = self._parse_data(target_inputs)
+            if self.args.use_oim:
+                inputs_1 = [Variable(inputs_1)]
+                inputs_2 = [Variable(inputs_2)]
+                targets = Variable(targets)
 
             # forward
             f_out_t1, p_out_t1 = self.model_1(inputs_1)
@@ -224,7 +229,7 @@ class MMTTrainer(object):
                         (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
                         loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
             else:
-                loss_oim_1, _ = self.criterion_oim(f_out_t1, targets)
+                loss_oim_1, p_out_t1 = self.criterion_oim(f_out_t1, targets)
                 loss_oim_2, p_out_t2 = self.criterion_oim(f_out_t2, targets)
 
                 loss = ((loss_oim_1 + loss_oim_2) * (1 - ce_soft_weight) +
