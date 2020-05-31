@@ -1,6 +1,5 @@
 from __future__ import print_function, absolute_import
 import time
-from torch.autograd import Variable
 
 from .evaluation_metrics import accuracy
 from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy, OIMLoss, SoftOIMLoss
@@ -198,10 +197,6 @@ class MMTTrainer(object):
 
             # process inputs
             inputs_1, inputs_2, targets = self._parse_data(target_inputs)
-            if self.args.use_oim:
-                inputs_1 = [Variable(inputs_1)]
-                inputs_2 = [Variable(inputs_2)]
-                targets = Variable(targets)
 
             # forward
             f_out_t1, p_out_t1 = self.model_1(inputs_1)
