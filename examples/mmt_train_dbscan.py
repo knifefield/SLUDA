@@ -7,7 +7,6 @@ import sys
 import collections
 
 from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import normalize
 
 import torch
 from torch import nn
@@ -75,7 +74,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
         normalizer
     ])
 
-    if (testset is None):
+    if testset is None:
         testset = list(set(dataset.query) | set(dataset.gallery))
 
     test_loader = DataLoader(
@@ -142,14 +141,11 @@ def main_worker(args):
 
     # Create data loaders
     iters = args.iters if (args.iters > 0) else None
-    dataset_source = get_data(args.dataset_source, args.data_dir)
     dataset_target = get_data(args.dataset_target, args.data_dir)
     test_loader_target = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers)
     # test loader = gallery + query from target
     tar_cluster_loader = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers,
                                          testset=dataset_target.train)
-    sour_cluster_loader = get_test_loader(dataset_source, args.height, args.width, args.batch_size, args.workers,
-                                          testset=dataset_source.train)
 
     # Create model
     model_1, model_2, model_1_ema, model_2_ema = create_model(args, len(dataset_target.train))  # 所有训练数据的个数
@@ -166,19 +162,7 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2  # 分别从两个meanNet中提取图片特征，然后相加求均值，得到最终特征表示
         cf = F.normalize(cf, dim=1)  # 2范数
 
-        # if args.lambda_value > 0:
-        #     dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)
-        #     cf_1 = torch.stack(list(dict_f.values()))
-        #     dict_f, _ = extract_features(model_2_ema, sour_cluster_loader, print_freq=50)
-        #     cf_2 = torch.stack(list(dict_f.values()))
-        #     cf_s = (cf_1 + cf_2) / 2
-        #     cf_s = F.normalize(cf_s, dim=1)
-        #     rerank_dist = compute_jaccard_dist(cf, lambda_value=args.lambda_value, source_features=cf_s,
-        #                                        use_gpu=args.rr_gpu).numpy()
-        # else:
-        #     rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
-
-        rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
+        rerank_dist = compute_jaccard_dist(cf, use_gpu=True).numpy()
 
         if epoch == 0:
             # DBSCAN cluster

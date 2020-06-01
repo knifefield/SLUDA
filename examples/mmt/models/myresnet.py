@@ -76,9 +76,9 @@ class MyResNet(nn.Module):
     def forward(self, x, feature_withbn=False):
         x = self.base(x)
 
-        x1 = self.gap(x)
-        x2 = self.gmp(x)
-        x = x1 + x2
+        x_ap = self.gap(x)
+        x_mp = self.gmp(x)
+        x = x_ap + x_mp
         x = x.view(x.size(0), -1)
 
         if self.cut_at_pooling:
