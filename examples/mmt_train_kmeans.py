@@ -73,7 +73,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
         normalizer
     ])
 
-    if (testset is None):
+    if testset is None:
         testset = list(set(dataset.query) | set(dataset.gallery))  # 元素的并集 再转成list , set()是无序不重复的元素集
 
     test_loader = DataLoader(
@@ -208,13 +208,7 @@ def main_worker(args):
         optimizer = torch.optim.Adam(params)
 
         # Trainer
-        if args.use_oim:
-            # Criterion
-            criterion = OIMLoss(model_1.module.num_features, args.num_clusters,
-                                scalar=args.oim_scalar, momentum=args.oim_momentum).cuda()
-            trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args, criterion)
-        else:
-            trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args, None)
+        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args, None)
 
         train_loader_target.new_epoch()
 
