@@ -34,7 +34,7 @@ class Circle(nn.Module):
         s_p = self._s * alpha_p * (sim_mat - delta_p)
         s_n = self._s * alpha_n * (sim_mat - delta_n)
 
-        targets = one_hot(targets, self._num_classes)
+        # targets = one_hot(targets, self._num_classes)
 
         pred_class_logits = targets * s_p + (1.0 - targets) * s_n
 
