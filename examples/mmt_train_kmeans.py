@@ -17,7 +17,6 @@ from mmt import datasets
 from mmt import models
 from mmt.trainers import MMTTrainer
 from mmt.evaluators import Evaluator, extract_features
-from mmt.loss.oim import OIMLoss
 from mmt.utils.data import IterLoader
 from mmt.utils.data import transforms as T
 from mmt.utils.data.sampler import RandomMultipleGallerySampler
@@ -150,10 +149,6 @@ def main_worker(args):
     # Create model
     model_1, model_2, model_1_ema, model_2_ema = create_model(args)
 
-    # Criterion
-    criterion = OIMLoss(model_1.module.num_features, args.num_clusters,
-                        scalar=args.oim_scalar, momentum=args.oim_momentum).cuda()
-
     # Evaluator
     evaluator_1_ema = Evaluator(model_1_ema)
     evaluator_2_ema = Evaluator(model_2_ema)
@@ -265,12 +260,8 @@ if __name__ == '__main__':
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
     # loss
-    parser.add_argument('--use-oim', action='store_true',
-                        help="use oim loss")
-    parser.add_argument('--oim-scalar', type=float, default=30,
-                        help='reciprocal of the temperature in OIM loss')
-    parser.add_argument('--oim-momentum', type=float, default=0.5,
-                        help='momentum for updating the LUT in OIM loss')
+    parser.add_argument('--cen-weight', type=float, default=0.0005,
+                        help='balance weight of center loss in total loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
