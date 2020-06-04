@@ -26,14 +26,14 @@ class PreTrainer(object):
 
         for i in range(train_iters):
             source_inputs = data_loader_source.next()
-            target_inputs = data_loader_target.next()
+            # target_inputs = data_loader_target.next()
             data_time.update(time.time() - end)
 
             s_inputs, targets = self._parse_data(source_inputs)
-            t_inputs, _ = self._parse_data(target_inputs)
-            s_features, s_cls_out = self.model(s_inputs)
+            # t_inputs, _ = self._parse_data(target_inputs)
+            s_features, s_cls_out = self.model(s_inputs, targets)
             # target samples: only forward
-            t_features, _ = self.model(t_inputs)
+            # t_features, _ = self.model(t_inputs)
 
             # backward main #
             loss_ce, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
@@ -50,7 +50,7 @@ class PreTrainer(object):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if ((i + 1) % print_freq == 0):
+            if (i + 1) % print_freq == 0:
                 print('Epoch: [{}][{}/{}]\t'
                       'Time {:.3f} ({:.3f})\t'
                       'Data {:.3f} ({:.3f})\t'
