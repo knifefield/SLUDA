@@ -17,7 +17,6 @@ from mmt import datasets
 from mmt import models
 from mmt.trainers import MMTTrainer
 from mmt.evaluators import Evaluator, extract_features
-from mmt.loss.oim import OIMLoss
 from mmt.utils.data import IterLoader
 from mmt.utils.data import transforms as T
 from mmt.utils.data.sampler import RandomMultipleGallerySampler
@@ -150,20 +149,13 @@ def main_worker(args):
     # Create model
     model_1, model_2, model_1_ema, model_2_ema = create_model(args)
 
-    # Criterion
-    criterion = OIMLoss(model_1.module.num_features, args.num_clusters,
-                        scalar=args.oim_scalar, momentum=args.oim_momentum).cuda()
-
     # Evaluator
     evaluator_1_ema = Evaluator(model_1_ema)
     evaluator_2_ema = Evaluator(model_2_ema)
 
     for epoch in range(args.epochs):
-        dict_f, _ = extract_features(model_1_ema, cluster_loader, print_freq=50)  # 返回的是features labels的字典
+        dict_f, _ = extract_features(model_1_ema, cluster_loader, print_freq=50) 
         cf_1 = torch.stack(list(dict_f.values())).numpy()
-        # dict_f.values()返回字典中的所有值
-        # list()将元组转换为列表
-        # torch.stack()沿着一个新维度对输入张量序列进行扩维连接，dim参数默认为0，形成n*x*y张量
         dict_f, _ = extract_features(model_2_ema, cluster_loader, print_freq=50)
         cf_2 = torch.stack(list(dict_f.values())).numpy()
         cf = (cf_1 + cf_2) / 2
@@ -208,13 +200,7 @@ def main_worker(args):
         optimizer = torch.optim.Adam(params)
 
         # Trainer
-        if args.use_oim:
-            # Criterion
-            criterion = OIMLoss(model_1.module.num_features, args.num_clusters,
-                                scalar=args.oim_scalar, momentum=args.oim_momentum).cuda()
-            trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args, criterion)
-        else:
-            trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args, None)
+        trainer = MMTTrainer(model_1, model_2, model_1_ema, model_2_ema, args)
 
         train_loader_target.new_epoch()
 
@@ -270,13 +256,6 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
-    # loss
-    parser.add_argument('--use-oim', action='store_true',
-                        help="use oim loss")
-    parser.add_argument('--oim-scalar', type=float, default=30,
-                        help='reciprocal of the temperature in OIM loss')
-    parser.add_argument('--oim-momentum', type=float, default=0.5,
-                        help='momentum for updating the LUT in OIM loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "

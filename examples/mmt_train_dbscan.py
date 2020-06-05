@@ -311,7 +311,7 @@ if __name__ == '__main__':
     parser.add_argument('--rr-gpu', action='store_true',
                         help="use GPU for accelerating clustering")
     # path
-    working_dir = osp.dirname(osp.abspath(__file__))  # 当前路径
+    working_dir = osp.dirname(osp.abspath(__file__)) 
     parser.add_argument('--data-dir', type=str, metavar='PATH',
                         default=osp.join(working_dir, 'data'))
     parser.add_argument('--logs-dir', type=str, metavar='PATH',
