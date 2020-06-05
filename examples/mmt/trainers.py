@@ -174,15 +174,19 @@ class MMTTrainer(object):
               optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
         # 训练模式，启用 BatchNormalization 和 Dropout
         if epoch < 5:
-            self.model_1.eval()
-            self.model_2.eval()
-            self.model_1_ema.eval()
-            self.model_2_ema.eval()
-        else:
-            self.model_1.train()
-            self.model_2.train()
-            self.model_1_ema.train()
-            self.model_2_ema.train()
+            for param in self.model_1.parameters():
+                param.requires_grad = False
+            for param in self.model_2.parameters():
+                param.requires_grad = False
+            for param in self.model_1_ema.parameters():
+                param.requires_grad = False
+            for param in self.model_2_ema.parameters():
+                param.requires_grad = False
+
+        self.model_1.train()
+        self.model_2.train()
+        self.model_1_ema.train()
+        self.model_2_ema.train()
 
         batch_time = AverageMeter()
         data_time = AverageMeter()
