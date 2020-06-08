@@ -173,16 +173,6 @@ class MMTTrainer(object):
     def train(self, epoch, data_loader_target,
               optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
         # 训练模式，启用 BatchNormalization 和 Dropout
-        if epoch < 5:
-            for param in self.model_1.module.base.parameters():
-                param.requires_grad = False
-            for param in self.model_2.module.base.parameters():
-                param.requires_grad = False
-            for param in self.model_1_ema.module.base.parameters():
-                param.requires_grad = False
-            for param in self.model_2_ema.module.base.parameters():
-                param.requires_grad = False
-
         self.model_1.train()
         self.model_2.train()
         self.model_1_ema.train()
@@ -224,8 +214,8 @@ class MMTTrainer(object):
             loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
                                                                                                    p_out_t1_ema)
 
-            loss_ce_1 = self.criterion_ce(p_out_t1, targets)
-            loss_ce_2 = self.criterion_ce(p_out_t2, targets)
+            loss_ce_1 = self.criterion_ce(p_out_t1, targets)*0.1
+            loss_ce_2 = self.criterion_ce(p_out_t2, targets)*0.1
 
             loss = ((loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) +
                     (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +

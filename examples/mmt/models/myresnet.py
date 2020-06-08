@@ -68,7 +68,7 @@ class MyResNet(nn.Module):
             if self.dropout > 0:
                 self.drop = nn.Dropout(self.dropout)
             if self.num_classes > 0:
-                self.classifier = Circle(self.num_features, self.num_classes, 0.25, 80)
+                self.classifier = Circle(self.num_features, self.num_classes, 0.25, 256)
                 self.classifier.apply(weights_init_classifier)
         init.constant_(self.feat_bn.weight, 1)
         init.constant_(self.feat_bn.bias, 0)
