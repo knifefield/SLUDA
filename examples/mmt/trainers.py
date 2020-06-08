@@ -260,7 +260,7 @@ class MMTTrainer(object):
             end = time.time()
 
             if (i + 1) % print_freq == 0:
-                # 'Loss_ce_soft {:.3f}\t'
+                # 'Loss_ce_soft {:.3f}\t' 'Prec {:.2%} / {:.2%}\t' precisions[0].avg, precisions[1].avg
                 print('Epoch: [{}][{}/{}]\t'
                       'Time {:.3f} ({:.3f})\t'
                       'Data {:.3f} ({:.3f})\t'
@@ -268,14 +268,14 @@ class MMTTrainer(object):
                       'Loss_tri {:.3f} / {:.3f}\t'
 
                       'Loss_tri_soft {:.3f}\t'
-                      'Prec {:.2%} / {:.2%}\t'
+
                       .format(epoch, i + 1, len(data_loader_target),
                               batch_time.val, batch_time.avg,
                               data_time.val, data_time.avg,
                               losses_ce[0].avg, losses_ce[1].avg,
                               losses_tri[0].avg, losses_tri[1].avg,
                               losses_tri_soft.avg,
-                              precisions[0].avg, precisions[1].avg))
+                              ))
 
     def _update_ema_variables(self, model, ema_model, alpha, global_step):
         alpha = min(1 - 1 / (global_step + 1), alpha)
