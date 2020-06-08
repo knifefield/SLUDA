@@ -196,13 +196,25 @@ class MMTTrainer(object):
             inputs_1, inputs_2, targets = self._parse_data(target_inputs)
 
             # forward
-            f_out_t1, p_out_t1 = self.model_1(inputs_1, targets)
-            f_out_t2, p_out_t2 = self.model_2(inputs_2, targets)
+            try:
+                f_out_t1, p_out_t1 = self.model_1(inputs_1, targets)
+            except TypeError:
+                f_out_t1, p_out_t1 = self.model_1(inputs_1)
+            try:
+                f_out_t2, p_out_t2 = self.model_2(inputs_2, targets)
+            except TypeError:
+                f_out_t2, p_out_t2 = self.model_2(inputs_2)
             p_out_t1 = p_out_t1[:, :self.num_cluster]
             p_out_t2 = p_out_t2[:, :self.num_cluster]
 
-            f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1, targets)
-            f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2, targets)
+            try:
+                f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1, targets)
+            except TypeError:
+                f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1)
+            try:
+                f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2, targets)
+            except TypeError:
+                f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2)
             p_out_t1_ema = p_out_t1_ema[:, :self.num_cluster]
             p_out_t2_ema = p_out_t2_ema[:, :self.num_cluster]
 
@@ -212,8 +224,8 @@ class MMTTrainer(object):
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +
                              self.criterion_tri_soft(f_out_t2, f_out_t1_ema, targets))
 
-            loss_ce_1 = self.criterion_ce(p_out_t1, targets)*0.1
-            loss_ce_2 = self.criterion_ce(p_out_t2, targets)*0.1
+            loss_ce_1 = self.criterion_ce(p_out_t1, targets) * 0.1
+            loss_ce_2 = self.criterion_ce(p_out_t2, targets) * 0.1
 
             # loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
             #                                                                                       p_out_t1_ema)
@@ -254,7 +266,7 @@ class MMTTrainer(object):
                       'Data {:.3f} ({:.3f})\t'
                       'Loss_ce {:.3f} / {:.3f}\t'
                       'Loss_tri {:.3f} / {:.3f}\t'
-                      
+
                       'Loss_tri_soft {:.3f}\t'
                       'Prec {:.2%} / {:.2%}\t'
                       .format(epoch, i + 1, len(data_loader_target),
