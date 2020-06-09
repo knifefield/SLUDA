@@ -39,5 +39,5 @@ sh scripts/pretrain.sh dukemtmc market1501 resnet50 2
 We utilized dbscan clustering algorithm in the paper.
 
 ```shell
-sh scripts/train_mmt_dbscan.sh dukemtmc market1501 resnet50
+sh scripts/train_mmt_dbscan.sh dukemtmc market1501 myresnet
 ```
