@@ -196,24 +196,24 @@ class MMTTrainer(object):
             inputs_1, inputs_2, targets = self._parse_data(target_inputs)
 
             # forward
-            try:
+            if self.args.arch == "circle":
                 f_out_t1, p_out_t1 = self.model_1(inputs_1, targets)
-            except TypeError:
+            else:
                 f_out_t1, p_out_t1 = self.model_1(inputs_1)
-            try:
+            if self.args.arch == "circle":
                 f_out_t2, p_out_t2 = self.model_2(inputs_2, targets)
-            except TypeError:
+            else:
                 f_out_t2, p_out_t2 = self.model_2(inputs_2)
             p_out_t1 = p_out_t1[:, :self.num_cluster]
             p_out_t2 = p_out_t2[:, :self.num_cluster]
 
-            try:
+            if self.args.arch == "circle":
                 f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1, targets)
-            except TypeError:
+            else:
                 f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1)
-            try:
+            if self.args.arch == "circle":
                 f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2, targets)
-            except TypeError:
+            else:
                 f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2)
             p_out_t1_ema = p_out_t1_ema[:, :self.num_cluster]
             p_out_t2_ema = p_out_t2_ema[:, :self.num_cluster]
