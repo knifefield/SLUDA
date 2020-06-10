@@ -144,7 +144,7 @@ def main_worker(args):
                                      warmup_iters=args.warmup_step)
 
     # Trainer
-    trainer = PreTrainer(model, num_classes, margin=args.margin)
+    trainer = PreTrainer(model, num_classes, args, margin=args.margin)
 
     # Start training
     for epoch in range(start_epoch, args.epochs):

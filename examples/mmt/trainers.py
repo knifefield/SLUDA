@@ -7,9 +7,10 @@ from .utils.meters import AverageMeter
 
 
 class PreTrainer(object):
-    def __init__(self, model, num_classes, margin=0.0):
+    def __init__(self, model, num_classes, args, margin=0.0):
         super(PreTrainer, self).__init__()
         self.model = model
+        self.args = args
         self.criterion_ce = CrossEntropyLabelSmooth(num_classes).cuda()
         self.criterion_triple = SoftTripletLoss(margin=margin).cuda()
 
