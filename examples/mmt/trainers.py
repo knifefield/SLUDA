@@ -31,7 +31,10 @@ class PreTrainer(object):
 
             s_inputs, targets = self._parse_data(source_inputs)
             # t_inputs, _ = self._parse_data(target_inputs)
-            s_features, s_cls_out = self.model(s_inputs, targets)
+            if self.args.arch == "myresnet":
+                s_features, s_cls_out = self.model(s_inputs, targets)
+            else:
+                s_features, s_cls_out = self.model(s_inputs)
             # target samples: only forward
             # t_features, _ = self.model(t_inputs)
 
