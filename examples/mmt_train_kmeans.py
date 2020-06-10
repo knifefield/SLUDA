@@ -164,7 +164,7 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2
 
         print('\n Clustering into {} classes \n'.format(args.num_clusters))
-        km = KMeans(n_clusters=args.num_clusters, random_state=args.seed, n_jobs=2).fit(cf)
+        km = KMeans(n_clusters=args.num_clusters, random_state=args.seed, n_jobs=-1).fit(cf)
 
         # 聚类后的各个类的中心，将这些中心标准化以后直接赋值到了线性层的参数中
         # 我们假设一个线性层的输入特征是M维的，输出是N维的，如果不加思考的化，就是一个M维到N维的转换。但是深入一点的思考的化，其实
