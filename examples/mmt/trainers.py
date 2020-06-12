@@ -12,7 +12,7 @@ class PreTrainer(object):
         self.model = model
         # self.criterion_ce = CrossEntropyLabelSmooth(num_classes).cuda()
         self.criterion_triple = SoftTripletLoss(margin=margin).cuda()
-        self.criterion_cir = SparseCircleLoss(in_feat=2048, class_num=num_classes, m = 0.25, gamma=256).cuda()
+        self.criterion_cir = SparseCircleLoss(in_feat=self.model.num_features, class_num=num_classes, m=0.25, gamma=256).cuda()
 
     def train(self, epoch, data_loader_source, data_loader_target, optimizer, train_iters=200, print_freq=1):
         self.model.train()
@@ -37,10 +37,10 @@ class PreTrainer(object):
             t_features, _ = self.model(t_inputs)
 
             # backward main #
-            losses_cir, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
-            loss = losses_cir + loss_tr
+            loss_cir, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
+            loss = loss_cir + loss_tr
 
-            losses_cir.update(losses_cir.item())
+            losses_cir.update(loss_cir.item())
             losses_tr.update(loss_tr.item())
             precisions.update(prec1)
 
@@ -51,7 +51,7 @@ class PreTrainer(object):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if ((i + 1) % print_freq == 0):
+            if (i + 1) % print_freq == 0:
                 print('Epoch: [{}][{}/{}]\t'
                       'Time {:.3f} ({:.3f})\t'
                       'Data {:.3f} ({:.3f})\t'
