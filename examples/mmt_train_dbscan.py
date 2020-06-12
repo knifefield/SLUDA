@@ -86,11 +86,15 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
 
 
 def create_model(args, classes):
-    model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
-    model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
+    model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                            circle=args.circle)
+    model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                            circle=args.circle)
 
-    model_1_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
-    model_2_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
+    model_1_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                                circle=args.circle)
+    model_2_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                                circle=args.circle)
 
     model_1.cuda()
     model_2.cuda()
