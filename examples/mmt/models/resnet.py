@@ -5,6 +5,9 @@ from torch.nn import functional as F
 from torch.nn import init
 import torchvision
 
+from .circle import Circle
+from mmt.utils.weight_init import weights_init_classifier
+
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152']
 
@@ -58,15 +61,19 @@ class ResNet(nn.Module):
             if self.dropout > 0:
                 self.drop = nn.Dropout(self.dropout)
             if self.num_classes > 0:
-                self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
-                init.normal_(self.classifier.weight, std=0.001)
+                if self.args.circle > 0:
+                    self.classifier = Circle(self.num_features, self.num_classes, 0.25, 256)
+                    self.classifier.apply(weights_init_classifier)
+                else:
+                    self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
+                    init.normal_(self.classifier.weight, std=0.001)
         init.constant_(self.feat_bn.weight, 1)
         init.constant_(self.feat_bn.bias, 0)
 
         if not pretrained:
             self.reset_params()
 
-    def forward(self, x, feature_withbn=False):
+    def forward(self, x, targets=None):
         x = self.base(x)
 
         x = self.gap(x)
@@ -93,12 +100,13 @@ class ResNet(nn.Module):
             bn_x = self.drop(bn_x)
 
         if self.num_classes > 0:
-            prob = self.classifier(bn_x)
+            if self.args.circle > 0:
+                prob = self.classifier(x, targets)
+            else:
+                prob = self.classifier(bn_x)
         else:
             return x, bn_x
 
-        if feature_withbn:
-            return bn_x, prob
         return x, prob
 
     def reset_params(self):

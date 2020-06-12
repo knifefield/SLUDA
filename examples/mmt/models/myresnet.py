@@ -102,7 +102,7 @@ class MyResNet(nn.Module):
             bn_x = self.drop(bn_x)
 
         if self.num_classes > 0:
-            bn_x = F.normalize(bn_x)
+            # bn_x = F.normalize(bn_x)
             prob = self.classifier(bn_x, targets)
         else:
             return x, bn_x
