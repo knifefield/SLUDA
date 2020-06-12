@@ -2,7 +2,7 @@ from __future__ import print_function, absolute_import
 import time
 
 from .evaluation_metrics import accuracy
-from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy
+from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy, SparseCircleLoss
 from .utils.meters import AverageMeter
 
 
@@ -10,15 +10,16 @@ class PreTrainer(object):
     def __init__(self, model, num_classes, margin=0.0):
         super(PreTrainer, self).__init__()
         self.model = model
-        self.criterion_ce = CrossEntropyLabelSmooth(num_classes).cuda()
+        # self.criterion_ce = CrossEntropyLabelSmooth(num_classes).cuda()
         self.criterion_triple = SoftTripletLoss(margin=margin).cuda()
+        self.criterion_cir = SparseCircleLoss(in_feat=2048, class_num=num_classes, m = 0.25, gamma=256).cuda()
 
     def train(self, epoch, data_loader_source, data_loader_target, optimizer, train_iters=200, print_freq=1):
         self.model.train()
 
         batch_time = AverageMeter()
         data_time = AverageMeter()
-        losses_ce = AverageMeter()
+        losses_cir = AverageMeter()
         losses_tr = AverageMeter()
         precisions = AverageMeter()
 
@@ -36,10 +37,10 @@ class PreTrainer(object):
             t_features, _ = self.model(t_inputs)
 
             # backward main #
-            loss_ce, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
-            loss = loss_ce + loss_tr
+            losses_cir, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
+            loss = losses_cir + loss_tr
 
-            losses_ce.update(loss_ce.item())
+            losses_cir.update(losses_cir.item())
             losses_tr.update(loss_tr.item())
             precisions.update(prec1)
 
@@ -60,7 +61,7 @@ class PreTrainer(object):
                       .format(epoch, i + 1, train_iters,
                               batch_time.val, batch_time.avg,
                               data_time.val, data_time.avg,
-                              losses_ce.val, losses_ce.avg,
+                              losses_cir.val, losses_cir.avg,
                               losses_tr.val, losses_tr.avg,
                               precisions.val, precisions.avg))
 
@@ -71,7 +72,7 @@ class PreTrainer(object):
         return inputs, targets
 
     def _forward(self, s_features, s_outputs, targets):
-        loss_ce = self.criterion_ce(s_outputs, targets)
+        loss_cir = self.criterion_cir(s_outputs, targets)
         if isinstance(self.criterion_triple, SoftTripletLoss):
             loss_tr = self.criterion_triple(s_features, s_features, targets)
         elif isinstance(self.criterion_triple, TripletLoss):
@@ -79,7 +80,7 @@ class PreTrainer(object):
         prec, = accuracy(s_outputs.data, targets.data)
         prec = prec[0]
 
-        return loss_ce, loss_tr, prec
+        return loss_cir, loss_tr, prec
 
 
 class ClusterBaseTrainer(object):
