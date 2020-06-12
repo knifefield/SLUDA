@@ -108,7 +108,7 @@ def main_worker(args):
                  args.width, args.batch_size, args.workers, 0, iters)
 
     # Create model
-    model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes)
+    model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, circle=args.circle)
     print(model)
     print("Model size: {:.3f} M".format(count_num_param(model)))
     model.cuda()
