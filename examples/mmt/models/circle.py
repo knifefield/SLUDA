@@ -25,6 +25,8 @@ class Circle(nn.Module):
         self.weight = Parameter(torch.Tensor(self._num_classes, in_feat))
 
     def forward(self, features, targets):
+        features = features.cuda()
+        targets = targets.cuda()
         sim_mat = F.linear(F.normalize(features), F.normalize(self.weight))
         alpha_p = F.relu(-sim_mat.detach() + 1 + self._m)
         alpha_n = F.relu(sim_mat.detach() + self._m)

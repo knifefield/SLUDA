@@ -102,6 +102,7 @@ class ResNet(nn.Module):
 
         if self.num_classes > 0:
             if self.circle > 0:
+                bn_x = F.normalize(bn_x)
                 prob = self.classifier(bn_x, targets)
             else:
                 prob = self.classifier(bn_x)
