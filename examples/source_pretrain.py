@@ -109,7 +109,7 @@ def main_worker(args):
 
     # Create model
     model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes)
-    print(model)
+    # print(model)
     print("Model size: {:.3f} M".format(count_num_param(model)))
     model.cuda()
     model = nn.DataParallel(model)  # 多gpu并行

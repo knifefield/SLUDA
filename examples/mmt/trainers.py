@@ -72,7 +72,7 @@ class PreTrainer(object):
         return inputs, targets
 
     def _forward(self, s_features, s_outputs, targets):
-        loss_cir = self.criterion_cir(s_outputs, targets)
+        loss_cir = self.criterion_cir(s_features, targets)
         if isinstance(self.criterion_triple, SoftTripletLoss):
             loss_tr = self.criterion_triple(s_features, s_features, targets)
         elif isinstance(self.criterion_triple, TripletLoss):
