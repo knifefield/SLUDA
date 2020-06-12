@@ -32,7 +32,7 @@ class PreTrainer(object):
 
             s_inputs, targets = self._parse_data(source_inputs)
             # t_inputs, _ = self._parse_data(target_inputs)
-            if self.args.arch == "myresnet":
+            if self.args.circle > 0:
                 s_features, s_cls_out = self.model(s_inputs, targets)
             else:
                 s_features, s_cls_out = self.model(s_inputs)
@@ -200,22 +200,22 @@ class MMTTrainer(object):
             inputs_1, inputs_2, targets = self._parse_data(target_inputs)
 
             # forward
-            if self.args.arch == "myresnet":
+            if self.args.circle > 0:
                 f_out_t1, p_out_t1 = self.model_1(inputs_1, targets)
             else:
                 f_out_t1, p_out_t1 = self.model_1(inputs_1)
-            if self.args.arch == "myresnet":
+            if self.args.circle > 0:
                 f_out_t2, p_out_t2 = self.model_2(inputs_2, targets)
             else:
                 f_out_t2, p_out_t2 = self.model_2(inputs_2)
             p_out_t1 = p_out_t1[:, :self.num_cluster]
             p_out_t2 = p_out_t2[:, :self.num_cluster]
 
-            if self.args.arch == "myresnet":
+            if self.args.circle > 0:
                 f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1, targets)
             else:
                 f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1)
-            if self.args.arch == "myresnet":
+            if self.args.circle > 0:
                 f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2, targets)
             else:
                 f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2)
