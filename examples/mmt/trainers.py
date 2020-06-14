@@ -41,7 +41,7 @@ class PreTrainer(object):
 
             # backward main #
             loss_ce, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
-            loss = loss_ce + loss_tr
+            loss = loss_ce * 0.1 + loss_tr
 
             losses_ce.update(loss_ce.item())
             losses_tr.update(loss_tr.item())
