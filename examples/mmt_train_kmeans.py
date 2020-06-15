@@ -247,7 +247,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch-size', type=int, default=64)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--num-clusters', type=int, default=500)
-    parser.add_argument('--height', type=int, default=256,
+    parser.add_argument('--height', type=int, default=384,
                         help="input height")
     parser.add_argument('--width', type=int, default=128,
                         help="input width")
