@@ -11,7 +11,7 @@ fi
 
 CUDA_VISIBLE_DEVICES=0 \
 python examples/mmt_train_dbscan.py -ds ${SOURCE} -dt ${TARGET} -a ${ARCH} \
-	--num-instances 16 --lr 0.00035 --iters 400 -b 32 -j 0 --epochs 40 \
+	--num-instances 16 --lr 0.00035 --iters 400 -b 32 -j 4 --epochs 40 \
 	--soft-ce-weight 0.5 --soft-tri-weight 1.0 --dropout 0.5 --lambda-value 0 \
 	--init-1 logs/${SOURCE}TO${TARGET}/${ARCH}-pretrain-1/model_best.pth.tar \
 	--init-2 logs/${SOURCE}TO${TARGET}/${ARCH}-pretrain-2/model_best.pth.tar \
