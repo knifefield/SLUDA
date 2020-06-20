@@ -296,7 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('--init-1', type=str, default='', metavar='PATH')
     parser.add_argument('--init-2', type=str, default='', metavar='PATH')
     parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--print-freq', type=int, default=1)
+    parser.add_argument('--print-freq', type=int, default=10)
     parser.add_argument('--eval-step', type=int, default=1)
     parser.add_argument('--lambda-value', type=float, default=0)
     parser.add_argument('--rr-gpu', action='store_true',
