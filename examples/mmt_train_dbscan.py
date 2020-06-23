@@ -227,7 +227,7 @@ def main_worker(args):
 
         trainer.train(epoch, train_loader_target, optimizer,
                       ce_soft_weight=args.soft_ce_weight, tri_soft_weight=args.soft_tri_weight,
-                      print_freq=args.print_freq, train_iters=len(train_loader_target))
+                      print_freq=args.print_freq, train_iters=len(train_loader_target), balance=args.balance)
 
         def save_model(model_ema, is_best, best_mAP, mid):
             save_checkpoint({
@@ -281,6 +281,8 @@ if __name__ == '__main__':
     # loss
     parser.add_argument('--circle', type=int, default=1,
                         help='1: use circle loss 0: not use')
+    parser.add_argument('--balance', type=float, default=1,
+                        help='balance between id loss and tri loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "

@@ -14,7 +14,7 @@ class PreTrainer(object):
         self.criterion_ce = CrossEntropyLabelSmooth(num_classes).cuda()
         self.criterion_triple = SoftTripletLoss(margin=margin).cuda()
 
-    def train(self, epoch, data_loader_source, data_loader_target, optimizer, train_iters=200, print_freq=1):
+    def train(self, epoch, data_loader_source, data_loader_target, optimizer, train_iters=200, print_freq=1, balance=0.1):
         self.model.train()
 
         batch_time = AverageMeter()
@@ -41,7 +41,7 @@ class PreTrainer(object):
 
             # backward main #
             loss_ce, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
-            loss = loss_ce * 0.1 + loss_tr
+            loss = loss_ce * balance + loss_tr
 
             losses_ce.update(loss_ce.item())
             losses_tr.update(loss_tr.item())
@@ -175,7 +175,7 @@ class MMTTrainer(object):
         self.criterion_tri_soft = SoftTripletLoss(margin=None).cuda()
 
     def train(self, epoch, data_loader_target,
-              optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
+              optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200, balance=0.1):
         # 训练模式，启用 BatchNormalization 和 Dropout
         self.model_1.train()
         self.model_2.train()
@@ -234,7 +234,7 @@ class MMTTrainer(object):
             loss_ce_soft = (self.criterion_ce_soft(p_out_t1, p_out_t2_ema) +
                             self.criterion_ce_soft(p_out_t2, p_out_t1_ema))
 
-            loss = ((loss_ce * (1 - ce_soft_weight) + loss_ce_soft * ce_soft_weight) * 0.1 +
+            loss = ((loss_ce * (1 - ce_soft_weight) + loss_ce_soft * ce_soft_weight) * balance +
                     loss_tri * (1 - tri_soft_weight) + loss_tri_soft * tri_soft_weight)
 
             optimizer.zero_grad()

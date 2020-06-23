@@ -153,7 +153,7 @@ def main_worker(args):
         train_loader_target.new_epoch()
 
         trainer.train(epoch, train_loader_source, train_loader_target, optimizer,
-                      train_iters=len(train_loader_source), print_freq=args.print_freq)
+                      train_iters=len(train_loader_source), print_freq=args.print_freq, balance=args.balance)
 
         if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             _, mAP = evaluator.evaluate(test_loader_source, dataset_source.query, dataset_source.gallery, cmc_flag=True)
@@ -198,6 +198,8 @@ if __name__ == '__main__':
     # loss
     parser.add_argument('--circle', type=int, default=1,
                         help='1: use circle loss 0: not use')
+    parser.add_argument('--balance', type=float, default=1,
+                        help='balance between id loss and tri loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained ")
