@@ -36,6 +36,7 @@ class CrossEntropyLabelSmooth(nn.Module):
         loss = (- targets * log_probs).mean(0).sum()
         return loss
 
+
 class SoftEntropy(nn.Module):
     def __init__(self):
         super(SoftEntropy, self).__init__()

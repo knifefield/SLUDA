@@ -72,7 +72,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
         normalizer
     ])
 
-    if (testset is None):
+    if testset is None:
         testset = list(set(dataset.query) | set(dataset.gallery))  # 元素的并集 再转成list , set()是无序不重复的元素集
 
     test_loader = DataLoader(
@@ -84,11 +84,13 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
 
 
 def create_model(args):
-    model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters)
-    model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters)
+    model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters,
+                            circle=args.circle)
+    model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=args.num_clusters,
+                            circle=args.circle)
 
-    model_1_ema = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters)
-    model_2_ema = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters)
+    model_1_ema = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters, circle=args.circle)
+    model_2_ema = models.create(args.arch, dropout=args.dropout, num_classes=args.num_clusters, circle=args.circle)
 
     model_1.cuda()
     model_2.cuda()
@@ -161,7 +163,7 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2
 
         print('\n Clustering into {} classes \n'.format(args.num_clusters))
-        km = KMeans(n_clusters=args.num_clusters, random_state=args.seed, n_jobs=2).fit(cf)
+        km = KMeans(n_clusters=args.num_clusters, random_state=args.seed, n_jobs=-1).fit(cf)
 
         # 聚类后的各个类的中心，将这些中心标准化以后直接赋值到了线性层的参数中
         # 我们假设一个线性层的输入特征是M维的，输出是N维的，如果不加思考的化，就是一个M维到N维的转换。但是深入一点的思考的化，其实
@@ -206,7 +208,7 @@ def main_worker(args):
 
         trainer.train(epoch, train_loader_target, optimizer,
                       ce_soft_weight=args.soft_ce_weight, tri_soft_weight=args.soft_tri_weight,
-                      print_freq=args.print_freq, train_iters=len(train_loader_target))
+                      print_freq=args.print_freq, train_iters=len(train_loader_target), balance=args.balance)
 
         def save_model(model_ema, is_best, best_mAP, mid):
             save_checkpoint({
@@ -242,7 +244,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch-size', type=int, default=64)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--num-clusters', type=int, default=500)
-    parser.add_argument('--height', type=int, default=256,
+    parser.add_argument('--height', type=int, default=384,
                         help="input height")
     parser.add_argument('--width', type=int, default=128,
                         help="input width")
@@ -256,6 +258,14 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
+<<<<<<< HEAD
+=======
+    # loss
+    parser.add_argument('--circle', type=int, default=1,
+                        help='1: use circle loss 0: not use')
+    parser.add_argument('--balance', type=float, default=1,
+                        help='balance between id loss and tri loss')
+>>>>>>> circle
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
@@ -272,7 +282,7 @@ if __name__ == '__main__':
     parser.add_argument('--init-1', type=str, default='', metavar='PATH')
     parser.add_argument('--init-2', type=str, default='', metavar='PATH')
     parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--print-freq', type=int, default=1)
+    parser.add_argument('--print-freq', type=int, default=10)
     parser.add_argument('--eval-step', type=int, default=1)
     # path
     working_dir = osp.dirname(osp.abspath(__file__))

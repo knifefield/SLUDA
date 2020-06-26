@@ -7,7 +7,6 @@ import sys
 import collections
 
 from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import normalize
 
 import torch
 from torch import nn
@@ -75,7 +74,7 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
         normalizer
     ])
 
-    if (testset is None):
+    if testset is None:
         testset = list(set(dataset.query) | set(dataset.gallery))
 
     test_loader = DataLoader(
@@ -87,11 +86,15 @@ def get_test_loader(dataset, height, width, batch_size, workers, testset=None):
 
 
 def create_model(args, classes):
-    model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
-    model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
+    model_1 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                            circle=args.circle)
+    model_2 = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                            circle=args.circle)
 
-    model_1_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
-    model_2_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes)
+    model_1_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                                circle=args.circle)
+    model_2_ema = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=classes,
+                                circle=args.circle)
 
     model_1.cuda()
     model_2.cuda()
@@ -142,14 +145,11 @@ def main_worker(args):
 
     # Create data loaders
     iters = args.iters if (args.iters > 0) else None
-    dataset_source = get_data(args.dataset_source, args.data_dir)
     dataset_target = get_data(args.dataset_target, args.data_dir)
     test_loader_target = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers)
     # test loader = gallery + query from target
     tar_cluster_loader = get_test_loader(dataset_target, args.height, args.width, args.batch_size, args.workers,
                                          testset=dataset_target.train)
-    sour_cluster_loader = get_test_loader(dataset_source, args.height, args.width, args.batch_size, args.workers,
-                                          testset=dataset_source.train)
 
     # Create model
     model_1, model_2, model_1_ema, model_2_ema = create_model(args, len(dataset_target.train))  # 所有训练数据的个数
@@ -166,19 +166,7 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2  # 分别从两个meanNet中提取图片特征，然后相加求均值，得到最终特征表示
         cf = F.normalize(cf, dim=1)  # 2范数
 
-        # if args.lambda_value > 0:
-        #     dict_f, _ = extract_features(model_1_ema, sour_cluster_loader, print_freq=50)
-        #     cf_1 = torch.stack(list(dict_f.values()))
-        #     dict_f, _ = extract_features(model_2_ema, sour_cluster_loader, print_freq=50)
-        #     cf_2 = torch.stack(list(dict_f.values()))
-        #     cf_s = (cf_1 + cf_2) / 2
-        #     cf_s = F.normalize(cf_s, dim=1)
-        #     rerank_dist = compute_jaccard_dist(cf, lambda_value=args.lambda_value, source_features=cf_s,
-        #                                        use_gpu=args.rr_gpu).numpy()
-        # else:
-        #     rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
-
-        rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
+        rerank_dist = compute_jaccard_dist(cf, use_gpu=True).numpy()
 
         if epoch == 0:
             # DBSCAN cluster
@@ -239,7 +227,7 @@ def main_worker(args):
 
         trainer.train(epoch, train_loader_target, optimizer,
                       ce_soft_weight=args.soft_ce_weight, tri_soft_weight=args.soft_tri_weight,
-                      print_freq=args.print_freq, train_iters=len(train_loader_target))
+                      print_freq=args.print_freq, train_iters=len(train_loader_target), balance=args.balance)
 
         def save_model(model_ema, is_best, best_mAP, mid):
             save_checkpoint({
@@ -248,7 +236,7 @@ def main_worker(args):
                 'best_mAP': best_mAP,
             }, is_best, fpath=osp.join(args.logs_dir, 'model' + str(mid) + '_checkpoint.pth.tar'))
 
-        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
+        if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             mAP_1 = evaluator_1_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
                                              cmc_flag=False)
             mAP_2 = evaluator_2_ema.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery,
@@ -276,7 +264,7 @@ if __name__ == '__main__':
                         choices=datasets.names())
     parser.add_argument('-b', '--batch-size', type=int, default=64)
     parser.add_argument('-j', '--workers', type=int, default=0)
-    parser.add_argument('--height', type=int, default=256,
+    parser.add_argument('--height', type=int, default=384,
                         help="input height")
     parser.add_argument('--width', type=int, default=128,
                         help="input width")
@@ -290,6 +278,11 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
+    # loss
+    parser.add_argument('--circle', type=int, default=1,
+                        help='1: use circle loss 0: not use')
+    parser.add_argument('--balance', type=float, default=1,
+                        help='balance between id loss and tri loss')
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
@@ -305,7 +298,7 @@ if __name__ == '__main__':
     parser.add_argument('--init-1', type=str, default='', metavar='PATH')
     parser.add_argument('--init-2', type=str, default='', metavar='PATH')
     parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--print-freq', type=int, default=1)
+    parser.add_argument('--print-freq', type=int, default=10)
     parser.add_argument('--eval-step', type=int, default=1)
     parser.add_argument('--lambda-value', type=float, default=0)
     parser.add_argument('--rr-gpu', action='store_true',

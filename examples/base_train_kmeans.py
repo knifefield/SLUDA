@@ -171,7 +171,7 @@ def main_worker(args):
                 'best_mAP': best_mAP,
             }, is_best, fpath=osp.join(args.logs_dir, 'checkpoint.pth.tar'))
 
-        if ((epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1)):
+        if (epoch + 1) % args.eval_step == 0 or (epoch == args.epochs - 1):
             mAP = evaluator.evaluate(test_loader_target, dataset_target.query, dataset_target.gallery, cmc_flag=False)
             is_best = (mAP > best_mAP)
             best_mAP = max(mAP, best_mAP)

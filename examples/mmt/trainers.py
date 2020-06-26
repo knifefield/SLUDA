@@ -7,13 +7,14 @@ from .utils.meters import AverageMeter
 
 
 class PreTrainer(object):
-    def __init__(self, model, num_classes, margin=0.0):
+    def __init__(self, model, num_classes, args, margin=0.0):
         super(PreTrainer, self).__init__()
         self.model = model
+        self.args = args
         self.criterion_ce = CrossEntropyLabelSmooth(num_classes).cuda()
         self.criterion_triple = SoftTripletLoss(margin=margin).cuda()
 
-    def train(self, epoch, data_loader_source, data_loader_target, optimizer, train_iters=200, print_freq=1):
+    def train(self, epoch, data_loader_source, data_loader_target, optimizer, train_iters=200, print_freq=1, balance=0.1):
         self.model.train()
 
         batch_time = AverageMeter()
@@ -26,18 +27,21 @@ class PreTrainer(object):
 
         for i in range(train_iters):
             source_inputs = data_loader_source.next()
-            target_inputs = data_loader_target.next()
+            # target_inputs = data_loader_target.next()
             data_time.update(time.time() - end)
 
             s_inputs, targets = self._parse_data(source_inputs)
-            t_inputs, _ = self._parse_data(target_inputs)
-            s_features, s_cls_out = self.model(s_inputs)
+            # t_inputs, _ = self._parse_data(target_inputs)
+            if self.args.circle > 0:
+                s_features, s_cls_out = self.model(s_inputs, targets)
+            else:
+                s_features, s_cls_out = self.model(s_inputs)
             # target samples: only forward
-            t_features, _ = self.model(t_inputs)
+            # t_features, _ = self.model(t_inputs)
 
             # backward main #
             loss_ce, loss_tr, prec1 = self._forward(s_features, s_cls_out, targets)
-            loss = loss_ce + loss_tr
+            loss = loss_ce * balance + loss_tr
 
             losses_ce.update(loss_ce.item())
             losses_tr.update(loss_tr.item())
@@ -50,7 +54,7 @@ class PreTrainer(object):
             batch_time.update(time.time() - end)
             end = time.time()
 
-            if ((i + 1) % print_freq == 0):
+            if (i + 1) % print_freq == 0:
                 print('Epoch: [{}][{}/{}]\t'
                       'Time {:.3f} ({:.3f})\t'
                       'Data {:.3f} ({:.3f})\t'
@@ -171,7 +175,12 @@ class MMTTrainer(object):
         self.criterion_tri_soft = SoftTripletLoss(margin=None).cuda()
 
     def train(self, epoch, data_loader_target,
+<<<<<<< HEAD
               optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200):
+=======
+              optimizer, ce_soft_weight=0.5, tri_soft_weight=0.5, print_freq=1, train_iters=200, balance=0.1):
+        # 训练模式，启用 BatchNormalization 和 Dropout
+>>>>>>> circle
         self.model_1.train()
         self.model_2.train()
         self.model_1_ema.train()
@@ -184,7 +193,11 @@ class MMTTrainer(object):
         losses_tri = [AverageMeter(), AverageMeter()]
         losses_ce_soft = AverageMeter()
         losses_tri_soft = AverageMeter()
+<<<<<<< HEAD
         precisions = [AverageMeter(), AverageMeter()]
+=======
+        # precisions = [AverageMeter(), AverageMeter()]
+>>>>>>> circle
 
         end = time.time()
         for i in range(train_iters):
@@ -195,21 +208,34 @@ class MMTTrainer(object):
             inputs_1, inputs_2, targets = self._parse_data(target_inputs)
 
             # forward
-            f_out_t1, p_out_t1 = self.model_1(inputs_1)
-            f_out_t2, p_out_t2 = self.model_2(inputs_2)
+            if self.args.circle > 0:
+                f_out_t1, p_out_t1 = self.model_1(inputs_1, targets)
+            else:
+                f_out_t1, p_out_t1 = self.model_1(inputs_1)
+            if self.args.circle > 0:
+                f_out_t2, p_out_t2 = self.model_2(inputs_2, targets)
+            else:
+                f_out_t2, p_out_t2 = self.model_2(inputs_2)
             p_out_t1 = p_out_t1[:, :self.num_cluster]
             p_out_t2 = p_out_t2[:, :self.num_cluster]
 
-            f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1)
-            f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2)
+            if self.args.circle > 0:
+                f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1, targets)
+            else:
+                f_out_t1_ema, p_out_t1_ema = self.model_1_ema(inputs_1)
+            if self.args.circle > 0:
+                f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2, targets)
+            else:
+                f_out_t2_ema, p_out_t2_ema = self.model_2_ema(inputs_2)
             p_out_t1_ema = p_out_t1_ema[:, :self.num_cluster]
             p_out_t2_ema = p_out_t2_ema[:, :self.num_cluster]
 
             loss_tri_1 = self.criterion_tri(f_out_t1, f_out_t1, targets)
             loss_tri_2 = self.criterion_tri(f_out_t2, f_out_t2, targets)
-
+            loss_tri = loss_tri_1 + loss_tri_2
             loss_tri_soft = (self.criterion_tri_soft(f_out_t1, f_out_t2_ema, targets) +
                              self.criterion_tri_soft(f_out_t2, f_out_t1_ema, targets))
+<<<<<<< HEAD
             loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2,
                                                                                                    p_out_t1_ema)
             
@@ -219,6 +245,17 @@ class MMTTrainer(object):
             loss = ((loss_ce_1 + loss_ce_2) * (1 - ce_soft_weight) +
                     (loss_tri_1 + loss_tri_2) * (1 - tri_soft_weight) +
                     loss_ce_soft * ce_soft_weight + loss_tri_soft * tri_soft_weight)
+=======
+
+            loss_ce_1 = self.criterion_ce(p_out_t1, targets)
+            loss_ce_2 = self.criterion_ce(p_out_t2, targets)
+            loss_ce = loss_ce_1 + loss_ce_2
+            loss_ce_soft = (self.criterion_ce_soft(p_out_t1, p_out_t2_ema) +
+                            self.criterion_ce_soft(p_out_t2, p_out_t1_ema))
+
+            loss = ((loss_ce * (1 - ce_soft_weight) + loss_ce_soft * ce_soft_weight) * balance +
+                    loss_tri * (1 - tri_soft_weight) + loss_tri_soft * tri_soft_weight)
+>>>>>>> circle
 
             optimizer.zero_grad()
             loss.backward()
@@ -227,23 +264,28 @@ class MMTTrainer(object):
             self._update_ema_variables(self.model_1, self.model_1_ema, self.alpha, epoch * len(data_loader_target) + i)
             self._update_ema_variables(self.model_2, self.model_2_ema, self.alpha, epoch * len(data_loader_target) + i)
 
-            prec_1, = accuracy(p_out_t1.data, targets.data)
-            prec_2, = accuracy(p_out_t2.data, targets.data)
+            # prec_1, = accuracy(p_out_t1.data, targets.data)
+            # prec_2, = accuracy(p_out_t2.data, targets.data)
 
             losses_ce[0].update(loss_ce_1.item())
             losses_ce[1].update(loss_ce_2.item())
+<<<<<<< HEAD
             losses_ce_soft.update(loss_ce_soft.item())
+=======
+>>>>>>> circle
             losses_tri[0].update(loss_tri_1.item())
             losses_tri[1].update(loss_tri_2.item())
+            losses_ce_soft.update(loss_ce_soft.item())
             losses_tri_soft.update(loss_tri_soft.item())
-            precisions[0].update(prec_1[0])
-            precisions[1].update(prec_2[0])
+            # precisions[0].update(prec_1[0])
+            # precisions[1].update(prec_2[0])
 
             # print log #
             batch_time.update(time.time() - end)
             end = time.time()
 
             if (i + 1) % print_freq == 0:
+<<<<<<< HEAD
                 print('Epoch: [{}][{}/{}]\t'
                         'Time {:.3f} ({:.3f})\t'
                         'Data {:.3f} ({:.3f})\t'
@@ -259,6 +301,24 @@ class MMTTrainer(object):
                                 losses_tri[0].avg, losses_tri[1].avg,
                                 losses_ce_soft.avg, losses_tri_soft.avg,
                                 precisions[0].avg, precisions[1].avg))
+=======
+                # 'Loss_ce_soft {:.3f}\t' 'Prec {:.2%} / {:.2%}\t' precisions[0].avg, precisions[1].avg
+                print('Epoch: [{}][{}/{}]\t'
+                      'Time {:.3f} ({:.3f})\t'
+                      'Data {:.3f} ({:.3f})\t'
+                      'Loss_ce {:.3f} / {:.3f}\t'
+                      'Loss_tri {:.3f} / {:.3f}\t'
+                      'Loss_ce_soft {:.3f}\t'
+                      'Loss_tri_soft {:.3f}\t'
+
+                      .format(epoch, i + 1, len(data_loader_target),
+                              batch_time.val, batch_time.avg,
+                              data_time.val, data_time.avg,
+                              losses_ce[0].avg, losses_ce[1].avg,
+                              losses_tri[0].avg, losses_tri[1].avg,
+                              losses_ce_soft.avg, losses_tri_soft.avg,
+                              ))
+>>>>>>> circle
 
     def _update_ema_variables(self, model, ema_model, alpha, global_step):
         alpha = min(1 - 1 / (global_step + 1), alpha)
