@@ -47,9 +47,10 @@ class PreTrainer(object):
             losses_tr.update(loss_tr.item())
             precisions.update(prec1)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            loss.backward()  # 计算梯度
+            if ((i + 1) % 2) == 0:
+                optimizer.step()  # 反向传播，更新网络参数
+                optimizer.zero_grad()  # 清空梯度
 
             batch_time.update(time.time() - end)
             end = time.time()
