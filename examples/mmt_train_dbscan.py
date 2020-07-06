@@ -166,7 +166,7 @@ def main_worker(args):
         cf = (cf_1 + cf_2) / 2  # 分别从两个meanNet中提取图片特征，然后相加求均值，得到最终特征表示
         cf = F.normalize(cf, dim=1)  # 2范数
 
-        rerank_dist = compute_jaccard_dist(cf, use_gpu=True).numpy()
+        rerank_dist = compute_jaccard_dist(cf, use_gpu=args.rr_gpu).numpy()
 
         if epoch == 0:
             # DBSCAN cluster
@@ -184,7 +184,7 @@ def main_worker(args):
         num_ids = len(set(labels)) - (1 if -1 in labels else 0)
         args.num_clusters = num_ids
         print('\n Clustered into {} classes \n'.format(args.num_clusters))
-
+        del rerank_dist
         # generate new dataset and calculate cluster centers
         new_dataset = []
         cluster_centers = collections.defaultdict(list)
