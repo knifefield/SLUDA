@@ -2,7 +2,7 @@ from __future__ import print_function, absolute_import
 import time
 
 from .evaluation_metrics import accuracy
-from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy, OIMLoss, SoftOIMLoss
+from .loss import TripletLoss, CrossEntropyLabelSmooth, SoftTripletLoss, SoftEntropy
 from .utils.meters import AverageMeter
 
 
