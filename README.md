@@ -35,13 +35,8 @@ sh scripts/pretrain.sh dukemtmc market1501 myresnet 1
 sh scripts/pretrain.sh dukemtmc market1501 myresnet 2
 ```
 
-<<<<<<< HEAD
 #### Stage II: End-to-end training with dbscan 
 We utilized dbscan clustering algorithm in the paper.
-=======
-#### Stage II: End-to-end training with MMT-500 
-We utilized DBSCAN clustering algorithm in the paper.
->>>>>>> circle
 
 ```shell
 sh scripts/train_mmt_dbscan.sh dukemtmc market1501 myresnet
