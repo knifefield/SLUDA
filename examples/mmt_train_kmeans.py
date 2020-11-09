@@ -258,14 +258,11 @@ if __name__ == '__main__':
                         choices=models.names())
     parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
-<<<<<<< HEAD
-=======
     # loss
     parser.add_argument('--circle', type=int, default=1,
                         help='1: use circle loss 0: not use')
     parser.add_argument('--balance', type=float, default=1,
                         help='balance between id loss and tri loss')
->>>>>>> circle
     # optimizer
     parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of new parameters, for pretrained "
