@@ -4,6 +4,7 @@ import os.path as osp
 import random
 import numpy as np
 import sys
+import time
 
 import torch
 from torch import nn
@@ -89,12 +90,12 @@ def main_worker(args):
     global start_epoch, best_mAP
 
     cudnn.benchmark = True
-
+    now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
     if not args.evaluate:
-        sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'))
+        sys.stdout = Logger(osp.join(args.logs_dir, now+'log.txt'))
     else:
         log_dir = osp.dirname(args.resume)
-        sys.stdout = Logger(osp.join(log_dir, 'log_test.txt'))
+        sys.stdout = Logger(osp.join(log_dir, now+'log_test.txt'))
     print("==========\nArgs:{}\n==========".format(args))
 
     # Create data loaders

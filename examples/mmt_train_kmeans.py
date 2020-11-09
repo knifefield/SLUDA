@@ -4,6 +4,7 @@ import os.path as osp
 import random
 import numpy as np
 import sys
+import time
 
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize
@@ -135,8 +136,8 @@ def main_worker(args):
     global best_mAP
 
     cudnn.benchmark = True
-
-    sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'))
+    now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
+    sys.stdout = Logger(osp.join(args.logs_dir, now+'log.txt'))
     print("==========\nArgs:{}\n==========".format(args))
 
     # Create data loaders

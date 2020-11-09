@@ -5,6 +5,7 @@ import random
 import numpy as np
 import sys
 import collections
+import time
 
 from sklearn.cluster import DBSCAN
 
@@ -139,8 +140,8 @@ def main_worker(args):
     global start_epoch, best_mAP
 
     cudnn.benchmark = True
-
-    sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'))
+    now = time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
+    sys.stdout = Logger(osp.join(args.logs_dir, now+'log.txt'))
     print("==========\nArgs:{}\n==========".format(args))
 
     # Create data loaders
