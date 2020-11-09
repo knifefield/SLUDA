@@ -34,8 +34,9 @@ class ResNet(nn.Module):
         resnet = ResNet.__factory[depth](pretrained=pretrained)
         resnet.layer4[0].conv2.stride = (1, 1)
         resnet.layer4[0].downsample[0].stride = (1, 1)
+        instance_nor = nn.InstanceNorm2d(64, affine=True)
         self.base = nn.Sequential(
-            resnet.conv1, resnet.bn1, resnet.maxpool,  # no relu
+            resnet.conv1, resnet.bn1, resnet.maxpool,  instance_nor,
             resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
         self.gap = nn.AdaptiveAvgPool2d(1)
 
